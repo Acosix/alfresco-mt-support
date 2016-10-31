@@ -50,6 +50,8 @@
         <messages.path>acosix/mtsupport</messages.path>
         <messages.packageId>acosix.mtsupport</messages.packageId>
         <moduleId>acosix-mtsupport</moduleId>
+        
+        <alfresco.distribution.version>5.0.d</alfresco.distribution.version>
     </properties>
 
     <dependencyManagement>
