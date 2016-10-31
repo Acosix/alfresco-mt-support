@@ -1,0 +1,70 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
+
+    <bean id="default-properties" class="${project.artifactId}.subsystems.SubsystemPropertiesFactoryBean">
+        <property name="subsystemChildApplicationContextManager" ref="Authentication" />
+        <property name="extensionProperties" value="false" />
+    </bean>
+
+    <bean id="extension-properties" class="${project.artifactId}.subsystems.SubsystemPropertiesFactoryBean">
+        <property name="subsystemChildApplicationContextManager" ref="Authentication" />
+        <property name="extensionProperties" value="false" />
+    </bean>
+
+    <bean id="effective-properties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="propertiesArray">
+            <list>
+                <ref bean="default-properties" />
+                <ref bean="global-properties" />
+                <ref bean="extension-properties" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="subsystem-placeholder-configurer" class="${project.artifactId}.subsystems.TenantAwareSubsystemPlaceholderConfigurer">
+        <property name="properties" ref="effective-properties" />
+        <property name="valueSeparator">
+            <null />
+        </property>
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="searchSystemEnvironment" value="false" />
+    </bean>
+
+    <bean id="AuthenticationComponent" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
+        <property name="proxyInterfaces" value="org.alfresco.repo.security.authentication.AuthenticationComponent" />
+        <property name="transactionManager" ref="transactionManager" />
+        <property name="target" ref="authenticationComponent" />
+        <property name="transactionAttributes">
+            <props>
+                <prop key="*">${server.transaction.mode.default}</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingLDAPAuthenticationComponentFacade">
+        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+
+        <property name="tenantService" ref="tenantService" />
+        <property name="tenantAdminService" ref="tenantAdminService" />
+    </bean>
+
+    <bean id="authenticationComponent.base" abstract="true" class="org.alfresco.repo.security.authentication.ldap.LDAPAuthenticationComponentImpl"
+        parent="authenticationComponentBase">
+        <property name="transactionService" ref="transactionService" />
+        <property name="nodeService" ref="nodeService" />
+        <property name="personService" ref="personService" />
+    </bean>
+
+    <bean id="authenticationComponent.template" scope="prototype" parent="authenticationComponent.base">
+        <property name="active" value="${ldap.authentication.thisTenant.active}" />
+        <property name="LDAPInitialDirContextFactory" ref="ldapInitialDirContextFactory.tenant-${tenant}" />
+        <property name="userNameFormat" value="${ldap.authentication.thisTenant.userNameFormat}" />
+        <property name="ldapNameResolver" ref="userRegistry.tenant-${tenant}" />
+        <property name="escapeCommasInBind" value="${ldap.authentication.thisTenant.escapeCommasInBind}" />
+        <property name="escapeCommasInUid" value="${ldap.authentication.thisTenant.escapeCommasInUid}" />
+        <property name="allowGuestLogin" value="${ldap.authentication.thisTenant.allowGuestLogin}" />
+        <property name="defaultAdministratorUserNameList" value="${ldap.authentication.thisTenant.defaultAdministratorUserNames}" />
+    </bean>
+
+</beans>
