@@ -28,6 +28,8 @@ import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.util.ParameterCheck;
 import org.alfresco.util.PropertyCheck;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanNameAware;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.context.ApplicationContext;
@@ -41,6 +43,8 @@ import de.acosix.alfresco.mtsupport.repo.beans.TenantBeanUtils;
 public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuthenticationComponent
         implements InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
 {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TenantRoutingLDAPAuthenticationComponentFacade.class);
 
     protected ApplicationContext applicationContext;
 
@@ -113,12 +117,15 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
     {
         final AtomicBoolean isActive = new AtomicBoolean(false);
 
-        this.enabledTenants.forEach(tenantDomain -> {
+        LOGGER.debug("Checking isActive for enabled tenants (until first active tenant)");
+        for (final String tenantDomain : this.enabledTenants)
+        {
             if (!isActive.get())
             {
                 isActive.set(this.isActive(tenantDomain));
             }
-        });
+        }
+        LOGGER.debug("Component is active: {}", isActive.get());
 
         return isActive.get();
     }
@@ -126,6 +133,8 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
     protected boolean isActive(final String tenantDomain)
     {
         boolean isActive = false;
+
+        LOGGER.trace("Checking isActive for tenant {}", tenantDomain);
         if (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
                 || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain)))
         {
@@ -135,7 +144,14 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
             {
                 isActive = ((ActivateableBean) authenticationComponent).isActive();
             }
+
+            LOGGER.trace("Tenant {} configured as active: {}", tenantDomain, isActive);
         }
+        else
+        {
+            LOGGER.trace("Tenant {} does not exist or has not been enabled", tenantDomain);
+        }
+
         return isActive;
     }
 
@@ -148,7 +164,9 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
     {
         final AtomicBoolean guestLoginAllowed = new AtomicBoolean(false);
 
-        this.enabledTenants.forEach(tenantDomain -> {
+        LOGGER.debug("Checking guestUserAuthenticationAllowed for enabled tenants (until first supporting tenant)");
+        for (final String tenantDomain : this.enabledTenants)
+        {
             if (!guestLoginAllowed.get())
             {
                 if (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
@@ -156,10 +174,13 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
                 {
                     final AuthenticationComponent authenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext,
                             this.beanName, tenantDomain, AuthenticationComponent.class);
-                    guestLoginAllowed.set(authenticationComponent.guestUserAuthenticationAllowed());
+                    final boolean guestUserAuthenticationAllowed = authenticationComponent.guestUserAuthenticationAllowed();
+                    LOGGER.trace("Tenant {} allows guest user authentication: {}", tenantDomain, guestUserAuthenticationAllowed);
+                    guestLoginAllowed.set(guestUserAuthenticationAllowed);
                 }
             }
-        });
+        }
+        LOGGER.debug("Component allowed guest authentication: {}", guestLoginAllowed.get());
 
         return guestLoginAllowed.get();
     }
@@ -174,13 +195,16 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
         ParameterCheck.mandatoryString("userName", userName);
 
         AuthenticationComponent relevantAuthenticationComponent;
-        String baseUserName = userName;
-
         final String primaryDomain = this.tenantService.getPrimaryDomain(userName);
+
+        LOGGER.debug("Extracted primary domain {} from user {}", primaryDomain, userName);
+
         if (primaryDomain == null || TenantService.DEFAULT_DOMAIN.equals(primaryDomain))
         {
             if (!this.isActive(TenantUtil.DEFAULT_TENANT))
             {
+                LOGGER.debug("Failing authentication for user {} as tenant {} has not been enabled for this authentication subsystem",
+                        userName, TenantUtil.DEFAULT_TENANT);
                 throw new AuthenticationException(TenantUtil.DEFAULT_TENANT + " tenant does not support LDAP authentication");
             }
 
@@ -189,15 +213,19 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
         }
         else if (!this.isActive(primaryDomain))
         {
+            LOGGER.debug("Failing authentication for user {} as tenant {} has not been enabled for this authentication subsystem", userName,
+                    primaryDomain);
             throw new AuthenticationException(primaryDomain + " tenant does not support LDAP authentication");
         }
         else
         {
-            baseUserName = this.tenantService.getBaseNameUser(userName);
             relevantAuthenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, userName,
                     AuthenticationComponent.class);
         }
 
-        relevantAuthenticationComponent.authenticate(baseUserName, password);
+        relevantAuthenticationComponent.authenticate(userName, password);
+
+        LOGGER.debug("Authenticated user {} with tenant {}", userName,
+                primaryDomain == null || TenantService.DEFAULT_DOMAIN.equals(primaryDomain) ? TenantUtil.DEFAULT_TENANT : primaryDomain);
     }
 }

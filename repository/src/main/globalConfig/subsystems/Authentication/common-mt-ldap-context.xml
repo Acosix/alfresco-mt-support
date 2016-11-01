@@ -9,7 +9,7 @@
 
     <bean id="extension-properties" class="${project.artifactId}.subsystems.SubsystemPropertiesFactoryBean">
         <property name="subsystemChildApplicationContextManager" ref="Authentication" />
-        <property name="extensionProperties" value="false" />
+        <property name="extensionProperties" value="true" />
     </bean>
 
     <bean id="effective-properties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
@@ -31,6 +31,18 @@
         <property name="searchSystemEnvironment" value="false" />
     </bean>
 
+    <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabledTenantPropertyKey" value="ldap.authentication.enabledTenants" />
+        <property name="beanNames">
+            <list>
+                <value>authenticationComponent</value>
+                <value>ldapInitialDirContextFactory</value>
+                <value>userRegistry</value>
+            </list>
+        </property>
+    </bean>
+
     <bean id="AuthenticationComponent" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="proxyInterfaces" value="org.alfresco.repo.security.authentication.AuthenticationComponent" />
         <property name="transactionManager" ref="transactionManager" />
@@ -42,22 +54,51 @@
         </property>
     </bean>
 
-    <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingLDAPAuthenticationComponentFacade">
+    <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingLDAPAuthenticationComponentFacade" parent="authenticationComponentBase">
+        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+
+        <property name="tenantService" ref="tenantService" />
+        <property name="tenantAdminService" ref="tenantAdminService" />
+        
+        <!-- inherited from base class -->
+        <property name="transactionService" ref="transactionService" />
+        <property name="nodeService" ref="nodeService" />
+        <property name="personService" ref="personService" />
+    </bean>
+
+    <bean id="localAuthenticationService" class="org.alfresco.repo.security.authentication.AuthenticationServiceImpl">
+        <property name="ticketComponent" ref="ticketComponent" />
+        <property name="authenticationComponent" ref="authenticationComponent" />
+        <property name="sysAdminParams" ref="sysAdminParams" />
+    </bean>
+
+    <bean id="ftpAuthenticator" class="${project.artifactId}.auth.TenantRoutingFTPAuthenticatorFacade" parent="ftpAuthenticatorBase">
         <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
 
         <property name="tenantService" ref="tenantService" />
         <property name="tenantAdminService" ref="tenantAdminService" />
     </bean>
 
-    <bean id="authenticationComponent.base" abstract="true" class="org.alfresco.repo.security.authentication.ldap.LDAPAuthenticationComponentImpl"
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabledTenantPropertyKey" value="ldap.authentication.enabledTenants" />
+        <property name="beanName" value="ftpAuthenticator" />
+        <property name="propertyName" value="activeByTenant" />
+        <property name="propertyPattern" value="ldap.authentication.thisTenant.authenticateFTP" />
+    </bean>
+
+    <bean id="authenticationComponent.base" abstract="true" class="${project.artifactId}.auth.TenantAwareLDAPAuthenticationComponent"
         parent="authenticationComponentBase">
         <property name="transactionService" ref="transactionService" />
         <property name="nodeService" ref="nodeService" />
         <property name="personService" ref="personService" />
+        <property name="tenantService" ref="tenantService" />
     </bean>
 
     <bean id="authenticationComponent.template" scope="prototype" parent="authenticationComponent.base">
         <property name="active" value="${ldap.authentication.thisTenant.active}" />
+        <property name="tenantDomain" value="${tenant}" />
+        <property name="stripTenantDomainForAuthentication" value="${ldap.authentication.thisTenant.stripTenantDomainForAuthentication}" />
         <property name="LDAPInitialDirContextFactory" ref="ldapInitialDirContextFactory.tenant-${tenant}" />
         <property name="userNameFormat" value="${ldap.authentication.thisTenant.userNameFormat}" />
         <property name="ldapNameResolver" ref="userRegistry.tenant-${tenant}" />
@@ -65,6 +106,127 @@
         <property name="escapeCommasInUid" value="${ldap.authentication.thisTenant.escapeCommasInUid}" />
         <property name="allowGuestLogin" value="${ldap.authentication.thisTenant.allowGuestLogin}" />
         <property name="defaultAdministratorUserNameList" value="${ldap.authentication.thisTenant.defaultAdministratorUserNames}" />
+    </bean>
+
+    <bean id="userRegistry" class="${project.artifactId}.auth.TenantRoutingUserRegistryFacade">
+        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+
+        <property name="tenantAdminService" ref="tenantAdminService" />
+    </bean>
+
+    <bean id="userRegistry.base" abstract="true" class="org.alfresco.repo.security.sync.ldap.LDAPUserRegistry">
+        <property name="namespaceService" ref="namespaceService" />
+    </bean>
+
+    <bean id="userRegistry.template" scope="prototype" parent="userRegistry.base">
+        <property name="active" value="${ldap.synchronization.thisTenant.active}" />
+        <property name="queryBatchSize" value="${ldap.synchronization.thisTenant.queryBatchSize}" />
+        <property name="attributeBatchSize" value="${ldap.synchronization.thisTenant.attributeBatchSize}" />
+        <property name="groupQuery" value="${ldap.synchronization.thisTenant.groupQuery}" />
+        <property name="groupDifferentialQuery" value="${ldap.synchronization.thisTenant.groupDifferentialQuery}" />
+        <property name="personQuery" value="${ldap.synchronization.thisTenant.personQuery}" />
+        <property name="personDifferentialQuery" value="${ldap.synchronization.thisTenant.personDifferentialQuery}" />
+        <property name="groupSearchBase" value="${ldap.synchronization.thisTenant.groupSearchBase}" />
+        <property name="userSearchBase" value="${ldap.synchronization.thisTenant.userSearchBase}" />
+        <property name="userIdAttributeName" value="${ldap.synchronization.thisTenant.userIdAttributeName}" />
+        <property name="modifyTimestampAttributeName" value="${ldap.synchronization.thisTenant.modifyTimestampAttributeName}" />
+        <property name="timestampFormat" value="${ldap.synchronization.thisTenant.timestampFormat}" />
+        <property name="groupIdAttributeName" value="${ldap.synchronization.thisTenant.groupIdAttributeName}" />
+        <property name="groupType" value="${ldap.synchronization.thisTenant.groupType}" />
+        <property name="personType" value="${ldap.synchronization.thisTenant.personType}" />
+        <property name="memberAttribute" value="${ldap.synchronization.thisTenant.groupMemberAttributeName}" />
+        <property name="personAttributeMapping">
+            <map>
+                <entry key="cm:userName" value="${ldap.synchronization.thisTenant.userIdAttributeName}" />
+                <entry key="cm:firstName" value="${ldap.synchronization.thisTenant.userFirstNameAttributeName}" />
+                <entry key="cm:lastName" value="${ldap.synchronization.thisTenant.userLastNameAttributeName}" />
+                <entry key="cm:email" value="${ldap.synchronization.thisTenant.userEmailAttributeName}" />
+                <entry key="cm:organization" value="${ldap.synchronization.thisTenant.userOrganizationalIdAttributeName}" />
+                <entry key="cm:organizationId" value="${ldap.synchronization.thisTenant.userOrganizationalIdAttributeName}" />
+                <entry key="cm:homeFolderProvider">
+                    <null />
+                </entry>
+            </map>
+        </property>
+        <property name="personAttributeDefaults">
+            <map>
+                <entry key="cm:homeFolderProvider" value="${ldap.synchronization.thisTenant.defaultHomeFolderProvider}" />
+            </map>
+        </property>
+        <property name="groupAttributeMapping">
+            <map>
+                <entry key="cm:authorityName" value="${ldap.synchronization.thisTenant.groupIdAttributeName}" />
+                <entry key="cm:authorityDisplayName" value="${ldap.synchronization.thisTenant.groupDisplayNameAttributeName}" />
+            </map>
+        </property>
+        <property name="enableProgressEstimation" value="${ldap.synchronization.thisTenant.enableProgressEstimation}" />
+        <property name="LDAPInitialDirContextFactory" ref="ldapInitialDirContextFactory.tenant-${tenant}" />
+    </bean>
+
+    <bean id="ldapInitialDirContextFactory.template" scope="prototype"
+        class="org.alfresco.repo.security.authentication.ldap.LDAPInitialDirContextFactoryImpl">
+        <property name="trustStorePath" value="${ldap.authentication.truststore.path}" />
+        <property name="trustStoreType" value="${ldap.authentication.truststore.type}" />
+        <property name="trustStorePassPhrase" value="${ldap.authentication.truststore.passphrase}" />
+
+        <property name="initialDirContextEnvironment">
+            <map>
+                <entry key="java.naming.factory.initial"
+                    value="${ldap.authentication.thisTenant.java.naming.factory.initial:${ldap.thisTenant.java.naming.factory.initial}}" />
+                <entry key="java.naming.provider.url" value="${ldap.authentication.thisTenant.java.naming.provider.url:${ldap.thisTenant.java.naming.provider.url}}" />
+                <entry key="java.naming.ldap.factory.socket"
+                    value="${ldap.authentication.thisTenant.java.naming.ldap.factory.socket:${ldap.thisTenant.java.naming.ldap.factory.socket:#{null}}}" />
+                <entry key="java.naming.referral" value="follow" />
+                <entry key="java.naming.security.protocol"
+                    value="${ldap.authentication.thisTenant.java.naming.security.protocol:${ldap.thisTenant.java.naming.security.protocol}}" />
+                <entry key="com.sun.jndi.ldap.read.timeout" value="${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.thisTenant.java.naming.read.timeout}}" />
+
+                <!-- The authentication mechanism to use for password validation -->
+                <!-- Some sasl authentication mechanisms may require a realm to be set -->
+                <!-- java.naming.security.sasl.realm -->
+                <!-- The available options will depend on your LDAP provider -->
+                <entry key="java.naming.security.authentication" value="${ldap.authentication.thisTenant.java.naming.security.authentication:${ldap.thisTenant.java.naming.security.authentication}}" />
+            </map>
+        </property>
+        <property name="defaultIntialDirContextEnvironment">
+            <map>
+                <!-- when the fallback order is "synchronization -> authentication -> generic" we do so only for compatibility with configuration 
+                    "design" from out-of-the-box LDAP subsystems -->
+                <entry key="java.naming.factory.initial"
+                    value="${ldap.synchronization.thisTenant.java.naming.factory.initial:${ldap.authentication.thisTenant.java.naming.factory.initial:${ldap.thisTenant.java.naming.factory.initial}}}" />
+                <entry key="java.naming.provider.url"
+                    value="${ldap.synchronization.thisTenant.java.naming.provider.url:${ldap.authentication.thisTenant.java.naming.provider.url:${ldap.thisTenant.java.naming.provider.url}}}" />
+                <entry key="java.naming.ldap.factory.socket"
+                    value="${ldap.synchronizationthisTenant.java.naming.ldap.factory.socket:${ldap.authentication.thisTenant.java.naming.ldap.factory.socket:${ldap.thisTenant.java.naming.ldap.factory.socket:#{null}}}}" />
+                <entry key="java.naming.referral" value="follow" />
+                <entry key="java.naming.security.protocol"
+                    value="${ldap.synchronization.thisTenant.java.naming.security.protocol:${ldap.authentication.thisTenant.java.naming.security.protocol:${ldap.thisTenant.java.naming.security.protocol}}}" />
+                <entry key="com.sun.jndi.ldap.read.timeout"
+                    value="${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.thisTenant.java.naming.read.timeout}}}" />
+                <entry key="javax.security.auth.useSubjectCredsOnly" value="false" />
+
+                <!-- The authentication mechanism to use for SYNCHRONIZATION -->
+                <!-- Some sasl authentication mechanisms may require a realm to be set -->
+                <!-- java.naming.security.sasl.realm -->
+                <!-- The available options will depend on your LDAP provider -->
+                <entry key="java.naming.security.authentication" value="${ldap.synchronization.thisTenant.java.naming.security.authentication:${ldap.thisTenant.java.naming.security.authentication}}" />
+                <entry key="java.naming.security.principal" value="${ldap.synchronization.thisTenant.java.naming.security.principal:${ldap.thisTenant.java.naming.security.principal}}" />
+                <entry key="java.naming.security.credentials" value="${ldap.synchronization.thisTenant.java.naming.security.credentials:${ldap.thisTenant.java.naming.security.credentials}}" />
+                <entry key="com.sun.jndi.ldap.connect.pool" value="${ldap.synchronization.thisTenant.com.sun.jndi.ldap.connect.pool:${ldap.thisTenant.com.sun.jndi.ldap.connect.pool}}" />
+                <entry key="com.sun.jndi.ldap.connect.timeout" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout}" />
+            </map>
+        </property>
+        <property name="poolSystemProperties">
+            <map>
+                <entry key="com.sun.jndi.ldap.connect.pool.authentication" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.authentication}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.debug" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.debug}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.initsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.initsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.maxsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.maxsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.prefsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.prefsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.protocol" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.protocol}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.timeout" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.timeout}" />
+            </map>
+        </property>
     </bean>
 
 </beans>

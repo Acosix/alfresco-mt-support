@@ -4,5 +4,14 @@
 	xsi:schemaLocation="
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
-
+    
+    <bean id="${moduleId}-enhanceAuthenticationChildApplicationContextManager" class="de.acosix.alfresco.utility.common.spring.ImplementationClassReplacingBeanDefinitionRegistryPostProcessor">
+        <property name="activePropertyKey" value="acosix.mtsupport.authentication.enhanceChildApplicationContextManager" />
+        <property name="propertiesSource" ref="global-properties" />
+        
+        <property name="targetBeanName" value="Authentication" />
+        <property name="originalClassName" value="org.alfresco.repo.management.subsystems.DefaultChildApplicationContextManager" />
+        <property name="replacementClassName" value="${project.artifactId}.subsystems.SubsystemChildApplicationContextManager" /> 
+    </bean>
+    
 </beans>

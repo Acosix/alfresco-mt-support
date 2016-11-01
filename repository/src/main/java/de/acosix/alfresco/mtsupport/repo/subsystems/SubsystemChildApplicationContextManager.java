@@ -86,7 +86,8 @@ public class SubsystemChildApplicationContextManager extends DefaultChildApplica
             final Collection<String> instanceIds = state.getInstanceIds();
             final AtomicReference<String> matchingInstanceId = new AtomicReference<>(null);
 
-            instanceIds.forEach(id -> {
+            for (final String id : instanceIds)
+            {
                 if (matchingInstanceId.get() == null)
                 {
                     final SubsystemChildApplicationContextFactory applicationContextFactory = state.getApplicationContextFactory(id);
@@ -97,7 +98,7 @@ public class SubsystemChildApplicationContextManager extends DefaultChildApplica
                         matchingInstanceId.set(id);
                     }
                 }
-            });
+            }
 
             return matchingInstanceId.get();
         }
@@ -161,7 +162,7 @@ public class SubsystemChildApplicationContextManager extends DefaultChildApplica
             final SubsystemApplicationContextManagerState state = (SubsystemApplicationContextManagerState) this.getState(false);
             final SubsystemChildApplicationContextFactory applicationContextFactory = state.getApplicationContextFactory(instanceId);
 
-            final List<String> idList = this.getId();
+            final List<String> idList = applicationContextFactory.getId();
 
             final StringBuilder propertiesLocationBuilder = new StringBuilder();
             propertiesLocationBuilder.append("classpath*:alfresco");

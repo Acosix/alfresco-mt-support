@@ -28,6 +28,8 @@ public final class TenantBeanUtils
 
     public static final String TENANT_BEAN_NAME_PATTERN = ".tenant-";
 
+    public static final String TENANT_BEAN_TEMPLATE_SUFFIX = ".template";
+
     public static final String TENANT_PLACEHOLDER = "tenant";
 
     public static final String TENANT_PLACEHOLDER_IN_PLACEHOLDER = ".thisTenant.";
