@@ -16,11 +16,13 @@
 package de.acosix.alfresco.mtsupport.repo.auth;
 
 import org.alfresco.repo.security.authentication.AuthenticationException;
+import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.security.authentication.ldap.LDAPAuthenticationComponentImpl;
 import org.alfresco.repo.tenant.TenantContextHolder;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.util.EqualsHelper;
+import org.alfresco.util.Pair;
 import org.alfresco.util.PropertyCheck;
 
 import net.sf.acegisecurity.Authentication;
@@ -85,10 +87,11 @@ public class TenantAwareLDAPAuthenticationComponent extends LDAPAuthenticationCo
     {
         String baseUserName;
 
-        final String tenantDomain = TenantUtil.getTenantDomain(userName);
+        final Pair<String, String> userTenant = AuthenticationUtil.getUserTenant(userName);
+        final String tenantDomain = userTenant.getSecond();
         if (this.stripTenantDomainForAuthentication && EqualsHelper.nullSafeEquals(this.tenantDomain, tenantDomain))
         {
-            baseUserName = this.tenantService.getBaseName(userName);
+            baseUserName = this.tenantService.getBaseNameUser(userName);
         }
         else
         {

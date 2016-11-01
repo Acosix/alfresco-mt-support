@@ -54,7 +54,7 @@
         </property>
     </bean>
 
-    <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingLDAPAuthenticationComponentFacade" parent="authenticationComponentBase">
+    <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingAuthenticationComponentFacade" parent="authenticationComponentBase">
         <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
 
         <property name="tenantService" ref="tenantService" />

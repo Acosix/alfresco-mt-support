@@ -225,8 +225,8 @@ public class TenantRoutingFTPAuthenticatorFacade extends AlfrescoFtpAuthenticato
         boolean isActive = false;
 
         LOGGER.trace("Checking isActive for tenant {}", tenantDomain);
-        if (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
-                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain)))
+        if (this.enabledTenants.contains(tenantDomain) && (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
+                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain))))
         {
             final Boolean active = this.activeByTenant.get(tenantDomain);
             isActive = Boolean.TRUE.equals(active);

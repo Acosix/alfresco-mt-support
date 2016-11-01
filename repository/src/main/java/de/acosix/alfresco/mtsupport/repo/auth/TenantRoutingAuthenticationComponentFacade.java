@@ -40,11 +40,11 @@ import de.acosix.alfresco.mtsupport.repo.beans.TenantBeanUtils;
 /**
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
-public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuthenticationComponent
+public class TenantRoutingAuthenticationComponentFacade extends AbstractAuthenticationComponent
         implements InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
 {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TenantRoutingLDAPAuthenticationComponentFacade.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TenantRoutingAuthenticationComponentFacade.class);
 
     protected ApplicationContext applicationContext;
 
@@ -135,8 +135,8 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
         boolean isActive = false;
 
         LOGGER.trace("Checking isActive for tenant {}", tenantDomain);
-        if (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
-                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain)))
+        if (this.enabledTenants.contains(tenantDomain) && (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
+                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain))))
         {
             final AuthenticationComponent authenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName,
                     tenantDomain, AuthenticationComponent.class);
@@ -219,7 +219,7 @@ public class TenantRoutingLDAPAuthenticationComponentFacade extends AbstractAuth
         }
         else
         {
-            relevantAuthenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, userName,
+            relevantAuthenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, primaryDomain,
                     AuthenticationComponent.class);
         }
 
