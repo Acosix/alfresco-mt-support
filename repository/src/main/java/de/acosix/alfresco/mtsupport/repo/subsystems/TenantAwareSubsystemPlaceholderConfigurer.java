@@ -25,6 +25,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionVisitor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.config.PropertyPlaceholderConfigurer;
+import org.springframework.beans.factory.config.TypedStringValue;
 import org.springframework.util.StringValueResolver;
 
 import de.acosix.alfresco.mtsupport.repo.beans.TenantBeanUtils;
@@ -73,7 +74,43 @@ public class TenantAwareSubsystemPlaceholderConfigurer extends PropertyPlacehold
     @Override
     protected void doProcessProperties(final ConfigurableListableBeanFactory beanFactoryToProcess, final StringValueResolver valueResolver)
     {
-        final BeanDefinitionVisitor visitor = new BeanDefinitionVisitor(valueResolver);
+        final BeanDefinitionVisitor visitor = new BeanDefinitionVisitor(valueResolver)
+        {
+
+            /**
+             * {@inheritDoc}
+             */
+            @Override
+            protected Object resolveValue(final Object value)
+            {
+                Object result = value;
+
+                // TODO Report bug with Spring
+                // TypedStringValue may be reused as result of cloneBeanDefinition and thus should not be mutated
+
+                if (value instanceof TypedStringValue)
+                {
+                    final TypedStringValue typedStringValue = (TypedStringValue) value;
+                    final String stringValue = typedStringValue.getValue();
+                    if (stringValue != null)
+                    {
+                        final String visitedString = this.resolveStringValue(stringValue);
+                        if (!stringValue.equals(visitedString))
+                        {
+                            result = typedStringValue.hasTargetType()
+                                    ? new TypedStringValue(visitedString, typedStringValue.getTargetType())
+                                    : new TypedStringValue(visitedString);
+                        }
+                    }
+                }
+                else
+                {
+                    result = super.resolveValue(value);
+                }
+
+                return result;
+            }
+        };
 
         final String[] beanNames = beanFactoryToProcess.getBeanDefinitionNames();
         for (final String curName : beanNames)
@@ -134,7 +171,7 @@ public class TenantAwareSubsystemPlaceholderConfigurer extends PropertyPlacehold
         }
 
         // placeholder contains the expected placeholder, perform resolution for tenant-specific and generic default variant of placeholder
-        if (TENANT_CONTEXT.get() != null && placeholder.contains(TenantBeanUtils.TENANT_PLACEHOLDER_IN_PLACEHOLDER))
+        else if (TENANT_CONTEXT.get() != null && placeholder.contains(TenantBeanUtils.TENANT_PLACEHOLDER_IN_PLACEHOLDER))
         {
             final String tenantDomain = TENANT_CONTEXT.get();
             LOGGER.debug("[{}] Processing placeholder {} for tenant domain", this.beanName, placeholder, tenantDomain);
