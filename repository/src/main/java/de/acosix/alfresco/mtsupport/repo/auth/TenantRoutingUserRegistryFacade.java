@@ -27,6 +27,7 @@ import org.alfresco.repo.management.subsystems.ActivateableBean;
 import org.alfresco.repo.security.sync.NodeDescription;
 import org.alfresco.repo.security.sync.UserRegistry;
 import org.alfresco.repo.tenant.TenantAdminService;
+import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.ParameterCheck;
@@ -127,8 +128,20 @@ public class TenantRoutingUserRegistryFacade
     @Override
     public Collection<NodeDescription> getPersons(final Date modifiedSince)
     {
-        // TODO
-        return Collections.emptyList();
+        final Collection<NodeDescription> results;
+
+        // we always expect the synchronization process to be in a single tenant's context
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        if (userRegistry != null)
+        {
+            results = userRegistry.getPersons(modifiedSince);
+        }
+        else
+        {
+            results = Collections.emptyList();
+        }
+        return results;
     }
 
     /**
@@ -137,8 +150,20 @@ public class TenantRoutingUserRegistryFacade
     @Override
     public Collection<NodeDescription> getGroups(final Date modifiedSince)
     {
-        // TODO
-        return Collections.emptyList();
+        final Collection<NodeDescription> results;
+
+        // we always expect the synchronization process to be in a single tenant's context
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        if (userRegistry != null)
+        {
+            results = userRegistry.getGroups(modifiedSince);
+        }
+        else
+        {
+            results = Collections.emptyList();
+        }
+        return results;
     }
 
     /**
@@ -147,8 +172,20 @@ public class TenantRoutingUserRegistryFacade
     @Override
     public Collection<String> getPersonNames()
     {
-        // TODO
-        return Collections.emptyList();
+        final Collection<String> results;
+
+        // we always expect the synchronization process to be in a single tenant's context
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        if (userRegistry != null)
+        {
+            results = userRegistry.getPersonNames();
+        }
+        else
+        {
+            results = Collections.emptyList();
+        }
+        return results;
     }
 
     /**
@@ -157,8 +194,20 @@ public class TenantRoutingUserRegistryFacade
     @Override
     public Collection<String> getGroupNames()
     {
-        // TODO
-        return Collections.emptyList();
+        final Collection<String> results;
+
+        // we always expect the synchronization process to be in a single tenant's context
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        if (userRegistry != null)
+        {
+            results = userRegistry.getGroupNames();
+        }
+        else
+        {
+            results = Collections.emptyList();
+        }
+        return results;
     }
 
     /**
@@ -167,8 +216,41 @@ public class TenantRoutingUserRegistryFacade
     @Override
     public Set<QName> getPersonMappedProperties()
     {
-        // TODO
-        return Collections.emptySet();
+        final Set<QName> results;
+
+        // we always expect the synchronization process to be in a single tenant's context
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        if (userRegistry != null)
+        {
+            results = userRegistry.getPersonMappedProperties();
+        }
+        else
+        {
+            results = Collections.emptySet();
+        }
+        return results;
+    }
+
+    protected UserRegistry getUserRegistryForCurrentDomain()
+    {
+        final String tenantDomain = TenantUtil.getCurrentDomain();
+        final UserRegistry userRegistry;
+        if (TenantService.DEFAULT_DOMAIN.equals(tenantDomain) && this.isActive(TenantUtil.DEFAULT_TENANT))
+        {
+            userRegistry = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, TenantUtil.DEFAULT_TENANT,
+                    UserRegistry.class);
+        }
+        else if (!TenantService.DEFAULT_DOMAIN.equals(tenantDomain) && this.isActive(tenantDomain))
+        {
+            userRegistry = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, tenantDomain,
+                    UserRegistry.class);
+        }
+        else
+        {
+            userRegistry = null;
+        }
+        return userRegistry;
     }
 
     protected boolean isActive(final String tenantDomain)
@@ -176,8 +258,8 @@ public class TenantRoutingUserRegistryFacade
         boolean isActive = false;
 
         LOGGER.trace("Checking isActive for tenant {}", tenantDomain);
-        if (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
-                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain)))
+        if (this.enabledTenants.contains(tenantDomain) && (TenantUtil.DEFAULT_TENANT.equals(tenantDomain)
+                || (this.tenantAdminService.existsTenant(tenantDomain) && this.tenantAdminService.isEnabledTenant(tenantDomain))))
         {
             final UserRegistry userRegistry = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, tenantDomain,
                     UserRegistry.class);
