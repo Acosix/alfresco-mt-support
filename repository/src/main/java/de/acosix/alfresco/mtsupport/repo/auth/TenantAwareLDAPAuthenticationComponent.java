@@ -104,12 +104,19 @@ public class TenantAwareLDAPAuthenticationComponent extends LDAPAuthenticationCo
     @Override
     public Authentication setCurrentUser(final String authenticatedUserName) throws AuthenticationException
     {
+        String domainUser = authenticatedUserName;
         if (!EqualsHelper.nullSafeEquals(this.tenantDomain, TenantUtil.DEFAULT_TENANT))
         {
             TenantContextHolder.setTenantDomain(this.tenantDomain);
+
+            final String domain = this.tenantService.getDomain(authenticatedUserName);
+            if (!EqualsHelper.nullSafeEquals(domain, this.tenantDomain))
+            {
+                domainUser = this.tenantService.getDomainUser(authenticatedUserName, this.tenantDomain);
+            }
         }
 
-        final Authentication authentication = super.setCurrentUser(authenticatedUserName);
+        final Authentication authentication = super.setCurrentUser(domainUser);
         return authentication;
     }
 }

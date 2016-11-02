@@ -40,12 +40,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import de.acosix.alfresco.mtsupport.repo.beans.TenantBeanUtils;
+import de.acosix.alfresco.mtsupport.repo.sync.MTAwareUserRegistry;
 
 /**
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
 public class TenantRoutingUserRegistryFacade
-        implements UserRegistry, InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
+        implements MTAwareUserRegistry, InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TenantRoutingUserRegistryFacade.class);
@@ -120,6 +121,17 @@ public class TenantRoutingUserRegistryFacade
         LOGGER.debug("Component is active: {}", isActive.get());
 
         return isActive.get();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean isActiveForTenant(final String tenantDomain)
+    {
+        final boolean isActive = this.isActive(
+                tenantDomain == null || TenantService.DEFAULT_DOMAIN.equals(tenantDomain) ? TenantUtil.DEFAULT_TENANT : tenantDomain);
+        return isActive;
     }
 
     /**
@@ -243,8 +255,7 @@ public class TenantRoutingUserRegistryFacade
         }
         else if (!TenantService.DEFAULT_DOMAIN.equals(tenantDomain) && this.isActive(tenantDomain))
         {
-            userRegistry = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, tenantDomain,
-                    UserRegistry.class);
+            userRegistry = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName, tenantDomain, UserRegistry.class);
         }
         else
         {

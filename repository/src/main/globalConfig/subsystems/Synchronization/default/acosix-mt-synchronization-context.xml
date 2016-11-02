@@ -1,0 +1,18 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="
+           http://www.springframework.org/schema/beans
+           http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
+
+    <bean id="${moduleId}-enhanceChainingUserRegistrySynchronizer" class="de.acosix.alfresco.utility.common.spring.BeanDefinitionFromPropertiesPostProcessor">
+        <property name="enabledProperty" value="acosix.mtsupport.synchronization.enhanceChainingUserRegistrySynchronizer" />
+        <property name="propertyPrefix" value="acosix.mtsupport.synchronization" />
+        <property name="beanTypes">
+            <list>
+                <value>userRegistrySynchronizer</value>
+            </list>
+        </property>
+        <property name="propertiesSource" ref="global-properties" />
+    </bean>
+
+</beans>
