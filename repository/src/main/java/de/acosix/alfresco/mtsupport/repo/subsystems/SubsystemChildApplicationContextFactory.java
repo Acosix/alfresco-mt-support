@@ -19,10 +19,12 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
+import org.alfresco.error.AlfrescoRuntimeException;
 import org.alfresco.repo.management.subsystems.ChildApplicationContextFactory;
 import org.alfresco.repo.management.subsystems.PropertyBackedBeanRegistry;
 import org.alfresco.repo.management.subsystems.PropertyBackedBeanState;
 import org.springframework.context.ApplicationContext;
+import org.springframework.core.io.Resource;
 
 /**
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
@@ -40,6 +42,65 @@ public class SubsystemChildApplicationContextFactory extends ChildApplicationCon
             throws IOException
     {
         super(parent, registry, propertyDefaults, category, typeName, instancePath);
+    }
+
+    /**
+     * Looks up the default subsystem configuration properties files for the this subsystem instance.
+     *
+     * @return the list of default configuration properties files
+     */
+    public Resource[] getSubsystemDefaultPropertiesResources()
+    {
+        try
+        {
+            final StringBuilder propertiesLocationBuilder = new StringBuilder();
+            propertiesLocationBuilder.append("classpath*:alfresco");
+            propertiesLocationBuilder.append("/subsystems/");
+            propertiesLocationBuilder.append(this.getCategory());
+            propertiesLocationBuilder.append('/');
+            propertiesLocationBuilder.append(this.getTypeName());
+            propertiesLocationBuilder.append("/*.properties");
+
+            final String defaultPropertiesPattern = propertiesLocationBuilder.toString();
+            final Resource[] resources = this.getParent().getResources(defaultPropertiesPattern);
+            return resources;
+        }
+        catch (final IOException ioex)
+        {
+            throw new AlfrescoRuntimeException("Error loading resources", ioex);
+        }
+    }
+
+    /**
+     * Looks up the extension subsystem configuration properties files for the this subsystem instance.
+     *
+     * @return the list of extension configuration properties files
+     */
+    public Resource[] getSubsystemExtensionPropertiesResources()
+    {
+        try
+        {
+            final List<String> idList = this.getId();
+
+            final StringBuilder propertiesLocationBuilder = new StringBuilder();
+            propertiesLocationBuilder.append("classpath*:alfresco");
+            propertiesLocationBuilder.append("/extension");
+            propertiesLocationBuilder.append("/subsystems/");
+            propertiesLocationBuilder.append(this.getCategory());
+            propertiesLocationBuilder.append('/');
+            propertiesLocationBuilder.append(this.getTypeName());
+            propertiesLocationBuilder.append("/");
+            propertiesLocationBuilder.append(idList.get(idList.size() - 1));
+            propertiesLocationBuilder.append("/*.properties");
+
+            final String extensionPropertiesPattern = propertiesLocationBuilder.toString();
+            final Resource[] resources = this.getParent().getResources(extensionPropertiesPattern);
+            return resources;
+        }
+        catch (final IOException ioex)
+        {
+            throw new AlfrescoRuntimeException("Error loading resources", ioex);
+        }
     }
 
     /**

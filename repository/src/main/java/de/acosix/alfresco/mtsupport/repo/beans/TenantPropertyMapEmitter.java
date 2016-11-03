@@ -44,6 +44,10 @@ public class TenantPropertyMapEmitter implements BeanDefinitionRegistryPostProce
 
     protected Properties effectiveProperties;
 
+    protected boolean enabled;
+
+    protected String enabledPropertyKey;
+
     protected String enabledTenantPropertyKey;
 
     protected String beanName;
@@ -73,6 +77,24 @@ public class TenantPropertyMapEmitter implements BeanDefinitionRegistryPostProce
     public void setEffectiveProperties(final Properties effectiveProperties)
     {
         this.effectiveProperties = effectiveProperties;
+    }
+
+    /**
+     * @param enabled
+     *            the enabled to set
+     */
+    public void setEnabled(final boolean enabled)
+    {
+        this.enabled = enabled;
+    }
+
+    /**
+     * @param enabledPropertyKey
+     *            the enabledPropertyKey to set
+     */
+    public void setEnabledPropertyKey(final String enabledPropertyKey)
+    {
+        this.enabledPropertyKey = enabledPropertyKey;
     }
 
     /**
@@ -127,48 +149,63 @@ public class TenantPropertyMapEmitter implements BeanDefinitionRegistryPostProce
     @Override
     public void postProcessBeanDefinitionRegistry(final BeanDefinitionRegistry registry) throws BeansException
     {
-        final String enabledTenantsProperty = this.effectiveProperties.getProperty(this.enabledTenantPropertyKey);
-        if (enabledTenantsProperty == null || enabledTenantsProperty.trim().isEmpty())
+        if (this.isEnabled())
         {
-            LOGGER.debug("No tenants have been defined as enabled");
-        }
-        else if (registry.containsBeanDefinition(this.beanName))
-        {
-            final List<String> enabledTenants = Arrays.asList(enabledTenantsProperty.trim().split("\\s*,\\s*"));
-            LOGGER.debug("Generating value for map property {} on bean {} for enabled tenants {}", this.propertyName, this.beanName,
-                    enabledTenants);
-
-            final BeanDefinition beanDefinition = registry.getBeanDefinition(this.beanName);
-
-            final Map<String, String> values = new ManagedMap<>();
-
-            final String[] fragments = this.propertyPattern.split(TenantBeanUtils.TENANT_PLACEHOLDER_IN_PLACEHOLDER);
-
-            for (final String tenant : enabledTenants)
+            final String enabledTenantsProperty = this.effectiveProperties.getProperty(this.enabledTenantPropertyKey);
+            if (enabledTenantsProperty == null || enabledTenantsProperty.trim().isEmpty())
             {
-                final StringBuilder valueBuilder = new StringBuilder();
-                valueBuilder.append("${");
-                valueBuilder.append(fragments[0]);
-                valueBuilder.append('.');
-                valueBuilder.append(tenant);
-                valueBuilder.append('.');
-                valueBuilder.append(fragments[1]);
-                valueBuilder.append(':');
-                valueBuilder.append("${");
-                valueBuilder.append(fragments[0]);
-                valueBuilder.append('.');
-                valueBuilder.append(fragments[1]);
-                valueBuilder.append("}}");
-
-                values.put(tenant, valueBuilder.toString());
+                LOGGER.debug("No tenants have been defined as enabled");
             }
+            else if (registry.containsBeanDefinition(this.beanName))
+            {
+                final List<String> enabledTenants = Arrays.asList(enabledTenantsProperty.trim().split("\\s*,\\s*"));
+                LOGGER.debug("Generating value for map property {} on bean {} for enabled tenants {}", this.propertyName, this.beanName,
+                        enabledTenants);
 
-            beanDefinition.getPropertyValues().add(this.propertyName, values);
-        }
-        else
-        {
-            LOGGER.warn("No template bean defined for {}", this.beanName);
+                final BeanDefinition beanDefinition = registry.getBeanDefinition(this.beanName);
+
+                final Map<String, String> values = new ManagedMap<>();
+
+                final String[] fragments = this.propertyPattern.split(TenantBeanUtils.TENANT_PLACEHOLDER_IN_PLACEHOLDER);
+
+                for (final String tenant : enabledTenants)
+                {
+                    final StringBuilder valueBuilder = new StringBuilder();
+                    valueBuilder.append("${");
+                    valueBuilder.append(fragments[0]);
+                    valueBuilder.append('.');
+                    valueBuilder.append(tenant);
+                    valueBuilder.append('.');
+                    valueBuilder.append(fragments[1]);
+                    valueBuilder.append(':');
+                    valueBuilder.append("${");
+                    valueBuilder.append(fragments[0]);
+                    valueBuilder.append('.');
+                    valueBuilder.append(fragments[1]);
+                    valueBuilder.append("}}");
+
+                    values.put(tenant, valueBuilder.toString());
+                }
+
+                beanDefinition.getPropertyValues().add(this.propertyName, values);
+            }
+            else
+            {
+                LOGGER.warn("No template bean defined for {}", this.beanName);
+            }
         }
     }
 
+    protected boolean isEnabled()
+    {
+        boolean result = this.enabled;
+
+        if (this.enabledPropertyKey != null)
+        {
+            final String enabledProperty = this.effectiveProperties.getProperty(this.enabledPropertyKey);
+            result |= Boolean.parseBoolean(enabledProperty);
+        }
+
+        return result;
+    }
 }

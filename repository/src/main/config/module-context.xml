@@ -12,5 +12,14 @@
         <property name="originalClassName" value="org.alfresco.repo.management.subsystems.DefaultChildApplicationContextManager" />
         <property name="replacementClassName" value="${project.artifactId}.subsystems.SubsystemChildApplicationContextManager" />
     </bean>
+    
+    <bean id="${moduleId}-enhanceSynchronizationChildApplicationContextManager" class="de.acosix.alfresco.utility.common.spring.ImplementationClassReplacingBeanDefinitionRegistryPostProcessor">
+        <property name="activePropertyKey" value="acosix.mtsupport.synchronization.enhanceChildApplicationContextManager" />
+        <property name="propertiesSource" ref="global-properties" />
+
+        <property name="targetBeanName" value="Synchronization" />
+        <property name="originalClassName" value="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory" />
+        <property name="replacementClassName" value="${project.artifactId}.subsystems.SubsystemChildApplicationContextFactory" />
+    </bean>
 
 </beans>

@@ -23,12 +23,17 @@ import org.alfresco.util.PropertyCheck;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
+import org.springframework.beans.MutablePropertyValues;
+import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.AbstractBeanDefinition;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.beans.factory.support.ManagedList;
+import org.springframework.beans.factory.support.ManagedMap;
+import org.springframework.beans.factory.support.ManagedSet;
 
 /**
  * Instances of this class may be used to dynamically emit new bean definitions for tenant-specific bean instances based on pre-defined
@@ -44,6 +49,10 @@ public class TemplatedTenantBeanEmitter implements BeanDefinitionRegistryPostPro
     private static final Logger LOGGER = LoggerFactory.getLogger(TemplatedTenantBeanEmitter.class);
 
     protected Properties effectiveProperties;
+
+    protected boolean enabled;
+
+    protected String enabledPropertyKey;
 
     protected String enabledTenantPropertyKey;
 
@@ -71,6 +80,24 @@ public class TemplatedTenantBeanEmitter implements BeanDefinitionRegistryPostPro
     }
 
     /**
+     * @param enabled
+     *            the enabled to set
+     */
+    public void setEnabled(final boolean enabled)
+    {
+        this.enabled = enabled;
+    }
+
+    /**
+     * @param enabledPropertyKey
+     *            the enabledPropertyKey to set
+     */
+    public void setEnabledPropertyKey(final String enabledPropertyKey)
+    {
+        this.enabledPropertyKey = enabledPropertyKey;
+    }
+
+    /**
      * @param enabledTenantPropertyKey
      *            the enabledTenantPropertyKey to set
      */
@@ -95,7 +122,6 @@ public class TemplatedTenantBeanEmitter implements BeanDefinitionRegistryPostPro
     public void postProcessBeanFactory(final ConfigurableListableBeanFactory beanFactory) throws BeansException
     {
         // NO-OP
-
     }
 
     /**
@@ -104,44 +130,97 @@ public class TemplatedTenantBeanEmitter implements BeanDefinitionRegistryPostPro
     @Override
     public void postProcessBeanDefinitionRegistry(final BeanDefinitionRegistry registry) throws BeansException
     {
-        final String enabledTenantsProperty = this.effectiveProperties.getProperty(this.enabledTenantPropertyKey);
-        if (enabledTenantsProperty == null || enabledTenantsProperty.trim().isEmpty())
+        if (this.isEnabled())
         {
-            LOGGER.debug("No tenants have been defined as enabled");
-        }
-        else
-        {
-            final List<String> enabledTenants = Arrays.asList(enabledTenantsProperty.trim().split("\\s*,\\s*"));
-            LOGGER.debug("Processing beans {} for enabled tenants {}", this.beanNames, enabledTenants);
-
-            for (final String beanName : this.beanNames)
+            final String enabledTenantsProperty = this.effectiveProperties.getProperty(this.enabledTenantPropertyKey);
+            if (enabledTenantsProperty == null || enabledTenantsProperty.trim().isEmpty())
             {
-                LOGGER.debug("Processing {}", beanName);
-                final String templateBeanName = beanName + TenantBeanUtils.TENANT_BEAN_TEMPLATE_SUFFIX;
-                if (registry.containsBeanDefinition(templateBeanName))
+                LOGGER.debug("No tenants have been defined as enabled");
+            }
+            else
+            {
+                final List<String> enabledTenants = Arrays.asList(enabledTenantsProperty.trim().split("\\s*,\\s*"));
+                LOGGER.debug("Processing beans {} for enabled tenants {}", this.beanNames, enabledTenants);
+
+                for (final String beanName : this.beanNames)
                 {
-                    final BeanDefinition beanDefinition = registry.getBeanDefinition(templateBeanName);
-
-                    if (beanDefinition instanceof AbstractBeanDefinition)
+                    LOGGER.debug("Processing {}", beanName);
+                    final String templateBeanName = beanName + TenantBeanUtils.TENANT_BEAN_TEMPLATE_SUFFIX;
+                    if (registry.containsBeanDefinition(templateBeanName))
                     {
-                        for (final String tenant : enabledTenants)
-                        {
-                            final AbstractBeanDefinition cloneBeanDefinition = ((AbstractBeanDefinition) beanDefinition)
-                                    .cloneBeanDefinition();
-                            cloneBeanDefinition.setScope(AbstractBeanDefinition.SCOPE_DEFAULT);
-                            final String tenantBeanName = beanName + TenantBeanUtils.TENANT_BEAN_NAME_PATTERN + tenant;
+                        final BeanDefinition beanDefinition = registry.getBeanDefinition(templateBeanName);
 
-                            LOGGER.debug("Adding clone of {} for tenant {}", templateBeanName, tenant);
-                            registry.registerBeanDefinition(tenantBeanName, cloneBeanDefinition);
+                        if (beanDefinition instanceof AbstractBeanDefinition)
+                        {
+                            for (final String tenant : enabledTenants)
+                            {
+                                final AbstractBeanDefinition cloneBeanDefinition = ((AbstractBeanDefinition) beanDefinition)
+                                        .cloneBeanDefinition();
+                                cloneBeanDefinition.setScope(AbstractBeanDefinition.SCOPE_DEFAULT);
+
+                                this.shallowCloneManagedCollections(cloneBeanDefinition);
+
+                                final String tenantBeanName = beanName + TenantBeanUtils.TENANT_BEAN_NAME_PATTERN + tenant;
+
+                                LOGGER.debug("Adding clone of {} for tenant {}", templateBeanName, tenant);
+                                registry.registerBeanDefinition(tenantBeanName, cloneBeanDefinition);
+                            }
                         }
                     }
-                }
-                else
-                {
-                    LOGGER.warn("No template bean defined for {}", beanName);
+                    else
+                    {
+                        LOGGER.warn("No template bean defined for {}", beanName);
+                    }
                 }
             }
         }
     }
 
+    protected void shallowCloneManagedCollections(final AbstractBeanDefinition cloneBeanDefinition)
+    {
+        // clone is not a deep clone - managed lists / maps are by-reference which is problematic for placeholder resolution
+        final MutablePropertyValues propertyValues = cloneBeanDefinition.getPropertyValues();
+        for (final PropertyValue pv : propertyValues.getPropertyValues())
+        {
+            final Object value = pv.getValue();
+            if (value instanceof ManagedList<?>)
+            {
+                final ManagedList<Object> newList = new ManagedList<>();
+                newList.setSource(((ManagedList<?>) value).getSource());
+                newList.setElementTypeName(((ManagedList<?>) value).getElementTypeName());
+                newList.addAll((ManagedList<?>) value);
+                propertyValues.add(pv.getName(), newList);
+            }
+            else if (value instanceof ManagedSet<?>)
+            {
+                final ManagedSet<Object> newSet = new ManagedSet<>();
+                newSet.setSource(((ManagedSet<?>) value).getSource());
+                newSet.setElementTypeName(((ManagedSet<?>) value).getElementTypeName());
+                newSet.addAll((ManagedSet<?>) value);
+                propertyValues.add(pv.getName(), newSet);
+            }
+            else if (value instanceof ManagedMap<?, ?>)
+            {
+                final ManagedMap<Object, Object> newMap = new ManagedMap<>();
+                newMap.setSource(((ManagedMap<?, ?>) value).getSource());
+                newMap.setKeyTypeName(((ManagedMap<?, ?>) value).getKeyTypeName());
+                newMap.setValueTypeName(((ManagedMap<?, ?>) value).getValueTypeName());
+                newMap.putAll((ManagedMap<?, ?>) value);
+                propertyValues.add(pv.getName(), newMap);
+            }
+        }
+    }
+
+    protected boolean isEnabled()
+    {
+        boolean result = this.enabled;
+
+        if (this.enabledPropertyKey != null)
+        {
+            final String enabledProperty = this.effectiveProperties.getProperty(this.enabledPropertyKey);
+            result |= Boolean.parseBoolean(enabledProperty);
+        }
+
+        return result;
+    }
 }

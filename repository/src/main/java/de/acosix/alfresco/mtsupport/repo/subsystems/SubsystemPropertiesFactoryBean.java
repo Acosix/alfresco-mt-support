@@ -36,6 +36,8 @@ public class SubsystemPropertiesFactoryBean extends PropertiesLoaderSupport
 
     protected SubsystemChildApplicationContextManager subsystemChildApplicationContextManager;
 
+    protected SubsystemChildApplicationContextFactory subsystemChildApplicationContextFactory;
+
     protected boolean extensionProperties;
 
     /**
@@ -54,22 +56,36 @@ public class SubsystemPropertiesFactoryBean extends PropertiesLoaderSupport
     @Override
     public void afterPropertiesSet()
     {
-        PropertyCheck.mandatory(this, "childApplicationContextManager", this.subsystemChildApplicationContextManager);
-
-        final String instanceId = this.subsystemChildApplicationContextManager.determineInstanceId(this.applicationContext);
-        if (instanceId == null)
-        {
-            throw new IllegalStateException("applicationContext is active but subsystem instance could not be determiend");
-        }
-
         final Resource[] locations;
-        if (this.extensionProperties)
+        if (this.subsystemChildApplicationContextFactory == null)
         {
-            locations = this.subsystemChildApplicationContextManager.getSubsystemExtensionPropertiesResources(instanceId);
+            PropertyCheck.mandatory(this, "childApplicationContextManager", this.subsystemChildApplicationContextManager);
+
+            final String instanceId = this.subsystemChildApplicationContextManager.determineInstanceId(this.applicationContext);
+            if (instanceId == null)
+            {
+                throw new IllegalStateException("applicationContext is active but subsystem instance could not be determiend");
+            }
+
+            if (this.extensionProperties)
+            {
+                locations = this.subsystemChildApplicationContextManager.getSubsystemExtensionPropertiesResources(instanceId);
+            }
+            else
+            {
+                locations = this.subsystemChildApplicationContextManager.getSubsystemDefaultPropertiesResources(instanceId);
+            }
         }
         else
         {
-            locations = this.subsystemChildApplicationContextManager.getSubsystemDefaultPropertiesResources(instanceId);
+            if (this.extensionProperties)
+            {
+                locations = this.subsystemChildApplicationContextFactory.getSubsystemExtensionPropertiesResources();
+            }
+            else
+            {
+                locations = this.subsystemChildApplicationContextFactory.getSubsystemDefaultPropertiesResources();
+            }
         }
         this.setLocations(locations);
     }
@@ -82,6 +98,16 @@ public class SubsystemPropertiesFactoryBean extends PropertiesLoaderSupport
             final SubsystemChildApplicationContextManager subsystemChildApplicationContextManager)
     {
         this.subsystemChildApplicationContextManager = subsystemChildApplicationContextManager;
+    }
+
+    /**
+     * @param subsystemChildApplicationContextFactory
+     *            the subsystemChildApplicationContextFactory to set
+     */
+    public void setSubsystemChildApplicationContextFactory(
+            final SubsystemChildApplicationContextFactory subsystemChildApplicationContextFactory)
+    {
+        this.subsystemChildApplicationContextFactory = subsystemChildApplicationContextFactory;
     }
 
     /**

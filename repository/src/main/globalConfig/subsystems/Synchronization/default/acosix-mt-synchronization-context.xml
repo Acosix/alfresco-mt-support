@@ -1,18 +1,82 @@
 <?xml version='1.0' encoding='UTF-8'?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
     xsi:schemaLocation="
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <bean id="${moduleId}-enhanceChainingUserRegistrySynchronizer" class="de.acosix.alfresco.utility.common.spring.BeanDefinitionFromPropertiesPostProcessor">
-        <property name="enabledProperty" value="acosix.mtsupport.synchronization.enhanceChainingUserRegistrySynchronizer" />
+    <bean id="${moduleId}-default-properties" class="${project.artifactId}.subsystems.SubsystemPropertiesFactoryBean">
+        <property name="subsystemChildApplicationContextFactory" ref="Synchronization" />
+        <property name="extensionProperties" value="false" />
+    </bean>
+
+    <bean id="${moduleId}-extension-properties" class="${project.artifactId}.subsystems.SubsystemPropertiesFactoryBean">
+        <property name="subsystemChildApplicationContextFactory" ref="Synchronization" />
+        <property name="extensionProperties" value="true" />
+    </bean>
+
+    <bean id="${moduleId}-effective-properties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="propertiesArray">
+            <list>
+                <ref bean="${moduleId}-default-properties" />
+                <ref bean="global-properties" />
+                <ref bean="${moduleId}-extension-properties" />
+            </list>
+        </property>
+    </bean>
+
+    <bean id="${moduleId}-subsystem-placeholder-configurer" class="${project.artifactId}.subsystems.TenantAwareSubsystemPlaceholderConfigurer">
+        <property name="properties" ref="${moduleId}-effective-properties" />
+        <property name="valueSeparator">
+            <null />
+        </property>
+        <property name="ignoreUnresolvablePlaceholders" value="true" />
+        <property name="searchSystemEnvironment" value="false" />
+    </bean>
+
+    <bean id="${moduleId}-enableMultiTenantUserRegistrySynchronization" class="de.acosix.alfresco.utility.common.spring.BeanDefinitionFromPropertiesPostProcessor">
+        <property name="enabledProperty" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
         <property name="propertyPrefix" value="acosix.mtsupport.synchronization" />
         <property name="beanTypes">
             <list>
                 <value>userRegistrySynchronizer</value>
+                <value>syncTrigger</value>
             </list>
         </property>
         <property name="propertiesSource" ref="global-properties" />
     </bean>
 
+    <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanNames">
+            <list>
+                <value>${moduleId}-ldapPeopleJobDetail</value>
+                <value>${moduleId}-syncTrigger</value>
+            </list>
+        </property>
+    </bean>
+
+    <bean id="${moduleId}-ldapPeopleJobDetail.template" scope="prototype" class="org.springframework.scheduling.quartz.JobDetailBean">
+        <property name="jobClass" value="${project.artifactId}.sync.TenantAwareUserRegistrySynchronizerJob" />
+        <property name="jobDataAsMap">
+            <map>
+                <entry key="userRegistrySynchronizer">
+                    <ref bean="userRegistrySynchronizer" />
+                </entry>
+                <entry key="tenantAdminService">
+                    <ref bean="tenantAdminService" />
+                </entry>
+                <entry key="tenantDomain" value="${tenant}" />
+                <entry key="synchronizeChangesOnly" value="${synchronization.thisTenant.synchronizeChangesOnly}" />
+            </map>
+        </property>
+    </bean>
+
+    <bean id="${moduleId}-syncTrigger.template" scope="prototype" class="org.alfresco.util.CronTriggerBean">
+        <property name="jobDetail" ref="${moduleId}-ldapPeopleJobDetail.tenant-${tenant}" />
+        <property name="cronExpression" value="${synchronization.thisTenant.import.cron}" />
+        <property name="scheduler" ref="schedulerFactory" />
+        <property name="startDelayMinutes" value="${system.cronJob.startDelayMinutes}" />
+    </bean>
 </beans>
