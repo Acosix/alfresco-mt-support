@@ -43,6 +43,38 @@
             </list>
         </property>
     </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantLDAPAttributeMappingPostProcessor">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabled" value="true" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
+        <property name="beanName" value="userRegistry" />
+        <property name="propertyName" value="personAttributeMapping" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantLDAPAttributeMappingPostProcessor">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabled" value="true" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
+        <property name="beanName" value="userRegistry" />
+        <property name="propertyName" value="groupAttributeMapping" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantLDAPAttributeMappingPostProcessor">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabled" value="true" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
+        <property name="beanName" value="userRegistry" />
+        <property name="propertyName" value="personAttributeDefaults" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantLDAPAttributeMappingPostProcessor">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabled" value="true" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
+        <property name="beanName" value="userRegistry" />
+        <property name="propertyName" value="groupAttributeDefaults" />
+    </bean>
 
     <bean id="AuthenticationComponent" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="proxyInterfaces" value="org.alfresco.repo.security.authentication.AuthenticationComponent" />

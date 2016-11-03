@@ -16,6 +16,8 @@
 package de.acosix.alfresco.mtsupport.repo.beans;
 
 import org.alfresco.util.ParameterCheck;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.context.ApplicationContext;
 
 /**
@@ -60,6 +62,30 @@ public final class TenantBeanUtils
         final String expectedBeanName = baseBeanName + TENANT_BEAN_NAME_PATTERN + tenantDomain;
         final Object bean = applicationContext.getBean(expectedBeanName);
         return bean;
+    }
+
+    /**
+     * Retrieves a specific bean definition for a specific tenant from the provided registry. This operation should only be used when each
+     * tenant domain is backed by its own implementation bean for a feature.
+     *
+     * @param registry
+     *            the bean definition registry from which to retrieve the bean definition
+     * @param baseBeanName
+     *            the base bean name
+     * @param tenantDomain
+     *            the tenant domain for which to retrieve the bean definition
+     * @return the bean definition
+     */
+    public static BeanDefinition getBeanDefinitionForTenant(final BeanDefinitionRegistry registry, final String baseBeanName,
+            final String tenantDomain)
+    {
+        ParameterCheck.mandatory("registry", registry);
+        ParameterCheck.mandatoryString("baseBeanName", baseBeanName);
+        ParameterCheck.mandatoryString("tenantDomain", tenantDomain);
+
+        final String expectedBeanName = baseBeanName + TENANT_BEAN_NAME_PATTERN + tenantDomain;
+        final BeanDefinition beanDefinition = registry.getBeanDefinition(expectedBeanName);
+        return beanDefinition;
     }
 
     /**
