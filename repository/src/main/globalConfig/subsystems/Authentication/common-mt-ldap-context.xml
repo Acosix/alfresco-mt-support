@@ -34,7 +34,7 @@
     <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
         <property name="effectiveProperties" ref="effective-properties" />
         <property name="enabled" value="true" />
-        <property name="enabledTenantPropertyKey" value="ldap.authentication.enabledTenants" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
         <property name="beanNames">
             <list>
                 <value>authenticationComponent</value>
