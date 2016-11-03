@@ -204,7 +204,7 @@
                 <entry key="java.naming.security.protocol"
                     value="${ldap.synchronization.thisTenant.java.naming.security.protocol:${ldap.authentication.thisTenant.java.naming.security.protocol:${ldap.thisTenant.java.naming.security.protocol}}}" />
                 <entry key="com.sun.jndi.ldap.read.timeout"
-                    value="${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.thisTenant.java.naming.read.timeout}}}" />
+                    value="${ldap.synchronization.thisTenant.java.naming.read.timeout:${ldap.authentication.thisTenant.java.naming.read.timeout:${ldap.thisTenant.java.naming.read.timeout}}}" />
                 <entry key="javax.security.auth.useSubjectCredsOnly" value="false" />
 
                 <!-- The authentication mechanism to use for SYNCHRONIZATION -->
@@ -215,7 +215,7 @@
                 <entry key="java.naming.security.principal" value="${ldap.synchronization.thisTenant.java.naming.security.principal:${ldap.thisTenant.java.naming.security.principal}}" />
                 <entry key="java.naming.security.credentials" value="${ldap.synchronization.thisTenant.java.naming.security.credentials:${ldap.thisTenant.java.naming.security.credentials}}" />
                 <entry key="com.sun.jndi.ldap.connect.pool" value="${ldap.synchronization.thisTenant.com.sun.jndi.ldap.connect.pool:${ldap.thisTenant.com.sun.jndi.ldap.connect.pool}}" />
-                <entry key="com.sun.jndi.ldap.connect.timeout" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout}" />
+                <entry key="com.sun.jndi.ldap.connect.timeout" value="${ldap.synchronization.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout:${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout}}" />
             </map>
         </property>
         <property name="poolSystemProperties">
