@@ -4,15 +4,19 @@ The Alfresco ECM product provides a basic multi-tenancy capability that users ca
 
 This module aims to provide - over time - alternative subsystem implementations that fully support the multi-tenancy capabilites of Alfresco and allow engineers / administrators to set up a system to use the same kind of functionality available to "simple" installs.
 
-# Compatbility
+## Compatbility
 
 This module is built to be compatible with Alfresco 5.0d and above. It may be used on either Community or Enterprise Edition. 
 
-# Roadmap
+## Added Multi-Tenant Features
+
+ - [Multi-Tenant LDAP/AD](Multi-Tenant-LDAP-Authentication-and-User-Registry)
+ - [Multi-Tenant Synchronization](Multi-Tenant-Synchronization)
+
+## Roadmap
 
 Alfresco itself currently considers several features not to be supported in a multi-tenant environment. This module aims to support most of them eventually:
 
- - LDAP (next release)
  - Inbound email (near future)
  - External authentication (near future)
  - IMAP (to be investigated)
@@ -54,15 +58,33 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
 
 ### Repository
 ```xml
+<!-- JAR packaging -->
+<dependency>
+    <groupId>de.acosix.alfresco.utility</groupId>
+    <artifactId>de.acosix.alfresco.utility.common</artifactId>
+    <version>1.0.0.0-SNAPSHOT</version>
+    <type>jar</type>
+</dependency>
+
+<dependency>
+    <groupId>de.acosix.alfresco.utility</groupId>
+    <artifactId>de.acosix.alfresco.utility.repo</artifactId>
+    <version>1.0.0.0-SNAPSHOT</version>
+    <type>jar</type>
+    <classifier>installable</classifier>
+</dependency>
+
 <dependency>
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
     <version>1.0.0.0-SNAPSHOT</version>
+    <type>jar</type>
     <classifier>installable</classifier>
 </dependency>
 
 <!-- OR -->
 
+<!-- AMP packaging -->
 <dependency>
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.utility.repo</artifactId>
