@@ -32,6 +32,22 @@ This project can be build simply by executing the standard Maven build lifecycle
 
 The simplest option to include the addon in an All-in-One project is by declaring a dependency to the installable JAR artifact. Alternatively, the AMP package may be included which typically requires additional configuration in addition to the dependency.
 
+### Using SNAPSHOT builds
+
+In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonatype Repository Hosting site, the the artifact repository may need to be added to the POM, global settings.xml or an artifact repository proxy server. The following is the XML snippet for inclusion in a POM file.
+
+```xml
+<repositories>
+    <repository>
+        <id>ossrh</id>
+        <url>https://oss.sonatype.org/content/repositories/snapshots</url>
+        <snapshots>
+            <enabled>true</enabled>
+        </snapshots>
+    </repository>
+</repositories>
+```
+
 ### Repository
 ```xml
 <dependency>
@@ -42,6 +58,13 @@ The simplest option to include the addon in an All-in-One project is by declarin
 </dependency>
 
 <!-- OR -->
+
+<dependency>
+    <groupId>de.acosix.alfresco.mtsupport</groupId>
+    <artifactId>de.acosix.alfresco.utility.repo</artifactId>
+    <version>1.0.0.0-SNAPSHOT</version>
+    <type>amp</type>
+</dependency>
 
 <dependency>
     <groupId>de.acosix.alfresco.mtsupport</groupId>
@@ -63,6 +86,11 @@ The simplest option to include the addon in an All-in-One project is by declarin
             </overlay>
             <!-- other AMPs -->
             <overlay>
+                <groupId>de.acosix.alfresco.utility</groupId>
+                <artifactId>de.acosix.alfresco.utility.repo</artifactId>
+                <version>1.0.0.0-SNAPSHOT</version>
+            </overlay>
+            <overlay>
                 <groupId>de.acosix.alfresco.mtsupport</groupId>
                 <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
                 <version>1.0.0.0-SNAPSHOT</version>
@@ -77,6 +105,12 @@ For Alfresco SDK 3 beta users:
 ```xml
 <platformModules>
     <moduleDependency>
+        <groupId>de.acosix.alfresco.utility</groupId>
+        <artifactId>de.acosix.alfresco.utility.repo</artifactId>
+        <version>1.0.0.0-SNAPSHOT</version>
+        <type>amp</type>
+    </moduleDependency>
+    <moduleDependency>
         <groupId>de.acosix.alfresco.mtsupport</groupId>
         <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
         <version>1.0.0.0-SNAPSHOT</version>
@@ -86,43 +120,5 @@ For Alfresco SDK 3 beta users:
 ```
 
 ### Share
-```xml
-<dependency>
-    <groupId>de.acosix.alfresco.mtsupport</groupId>
-    <artifactId>de.acosix.alfresco.mtsupport.share</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
-    <classifier>installable</classifier>
-</dependency>
 
-<!-- OR -->
-
-<dependency>
-    <groupId>de.acosix.alfresco.mtsupport</groupId>
-    <artifactId>de.acosix.alfresco.mtsupport.share</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
-    <type>amp</type>
-</dependency>
-
-<plugin>
-    <artifactId>maven-war-plugin</artifactId>
-    <configuration>
-        <overlays>
-            <overlay />
-            <overlay>
-                <groupId>${alfresco.groupId}</groupId>
-                <artifactId>${alfresco.share.artifactId}</artifactId>
-                <type>war</type>
-                <excludes />
-            </overlay>
-            <!-- other AMPs -->
-            <overlay>
-                <groupId>de.acosix.alfresco.mtsupport</groupId>
-                <artifactId>de.acosix.alfresco.mtsupport.share</artifactId>
-                <version>1.0.0.0-SNAPSHOT</version>
-            </overlay>
-        </overlays>
-    </configuration>
-</plugin>
-```
-
-TODO: SDK 3 usage
+Currently the Share module does not provide any content / enhancements / features. 
