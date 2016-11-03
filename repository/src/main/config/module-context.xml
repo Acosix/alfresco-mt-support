@@ -10,7 +10,7 @@
 
         <property name="targetBeanName" value="Authentication" />
         <property name="originalClassName" value="org.alfresco.repo.management.subsystems.DefaultChildApplicationContextManager" />
-        <property name="replacementClassName" value="${project.artifactId}.subsystems.SubsystemChildApplicationContextManager" />
+        <property name="replacementClassName" value="${acosix.common.repo.package}.subsystems.SubsystemChildApplicationContextManager" />
     </bean>
     
     <bean id="${moduleId}-enhanceSynchronizationChildApplicationContextManager" class="de.acosix.alfresco.utility.common.spring.ImplementationClassReplacingBeanDefinitionRegistryPostProcessor">
@@ -19,7 +19,7 @@
 
         <property name="targetBeanName" value="Synchronization" />
         <property name="originalClassName" value="org.alfresco.repo.management.subsystems.ChildApplicationContextFactory" />
-        <property name="replacementClassName" value="${project.artifactId}.subsystems.SubsystemChildApplicationContextFactory" />
+        <property name="replacementClassName" value="${acosix.common.repo.package}.subsystems.SubsystemChildApplicationContextFactory" />
     </bean>
 
 </beans>

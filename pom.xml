@@ -50,11 +50,27 @@
         <messages.path>acosix/mtsupport</messages.path>
         <messages.packageId>acosix.mtsupport</messages.packageId>
         <moduleId>acosix-mtsupport</moduleId>
-        
+
         <alfresco.distribution.version>5.0.d</alfresco.distribution.version>
+        
+        <acosix.common.repo.package>de.acosix.alfresco.utility.repo</acosix.common.repo.package>
     </properties>
 
     <dependencyManagement>
+
+        <dependencies>
+            <dependency>
+                <groupId>de.acosix.alfresco.utility</groupId>
+                <artifactId>de.acosix.alfresco.utility.repo</artifactId>
+                <version>1.0.0.0-SNAPSHOT</version>
+            </dependency>
+            
+            <dependency>
+                <groupId>de.acosix.alfresco.utility</groupId>
+                <artifactId>de.acosix.alfresco.utility.share</artifactId>
+                <version>1.0.0.0-SNAPSHOT</version>
+            </dependency>
+        </dependencies>
 
     </dependencyManagement>
 
