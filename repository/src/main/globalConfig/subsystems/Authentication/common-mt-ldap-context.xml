@@ -88,7 +88,7 @@
     </bean>
 
     <bean id="authenticationComponent" class="${project.artifactId}.auth.TenantRoutingAuthenticationComponentFacade" parent="authenticationComponentBase">
-        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+        <property name="enabledTenants" value="${ldap.enabledTenants}" />
 
         <property name="tenantService" ref="tenantService" />
         <property name="tenantAdminService" ref="tenantAdminService" />
@@ -106,7 +106,7 @@
     </bean>
 
     <bean id="ftpAuthenticator" class="${project.artifactId}.auth.TenantRoutingFTPAuthenticatorFacade" parent="ftpAuthenticatorBase">
-        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+        <property name="enabledTenants" value="${ldap.enabledTenants}" />
 
         <property name="tenantService" ref="tenantService" />
         <property name="tenantAdminService" ref="tenantAdminService" />
@@ -115,7 +115,7 @@
     <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
         <property name="effectiveProperties" ref="effective-properties" />
         <property name="enabled" value="true" />
-        <property name="enabledTenantPropertyKey" value="ldap.authentication.enabledTenants" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
         <property name="beanName" value="ftpAuthenticator" />
         <property name="propertyName" value="activeByTenant" />
         <property name="propertyPattern" value="ldap.authentication.thisTenant.authenticateFTP" />
@@ -143,7 +143,7 @@
     </bean>
 
     <bean id="userRegistry" class="${project.artifactId}.auth.TenantRoutingUserRegistryFacade">
-        <property name="enabledTenants" value="${ldap.authentication.enabledTenants}" />
+        <property name="enabledTenants" value="${ldap.enabledTenants}" />
 
         <property name="tenantAdminService" ref="tenantAdminService" />
     </bean>
