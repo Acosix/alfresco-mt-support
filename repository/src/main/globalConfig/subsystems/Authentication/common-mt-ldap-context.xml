@@ -167,9 +167,9 @@
 
     <bean id="ldapInitialDirContextFactory.template" scope="prototype"
         class="org.alfresco.repo.security.authentication.ldap.LDAPInitialDirContextFactoryImpl">
-        <property name="trustStorePath" value="${ldap.authentication.truststore.path}" />
-        <property name="trustStoreType" value="${ldap.authentication.truststore.type}" />
-        <property name="trustStorePassPhrase" value="${ldap.authentication.truststore.passphrase}" />
+        <property name="trustStorePath" value="${ldap.thisTenant.truststore.path}" />
+        <property name="trustStoreType" value="${ldap.thisTenant.truststore.type}" />
+        <property name="trustStorePassPhrase" value="${ldap.thisTenant.truststore.passphrase}" />
 
         <property name="initialDirContextEnvironment">
             <map>
