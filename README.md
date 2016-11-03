@@ -4,6 +4,10 @@ The Alfresco ECM product provides a basic multi-tenancy capability that users ca
 
 This module aims to provide - over time - alternative subsystem implementations that fully support the multi-tenancy capabilites of Alfresco and allow engineers / administrators to set up a system to use the same kind of functionality available to "simple" installs.
 
+# Compatbility
+
+This module is built to be compatible with Alfresco 5.0d and above. It may be used on either Community or Enterprise Edition. 
+
 # Roadmap
 
 Alfresco itself currently considers several features not to be supported in a multi-tenant environment. This module aims to support most of them eventually:
