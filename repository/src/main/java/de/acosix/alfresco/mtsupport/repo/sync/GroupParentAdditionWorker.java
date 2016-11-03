@@ -50,15 +50,29 @@ public class GroupParentAdditionWorker extends AbstractSyncBatchWorker<String>
     @Override
     public void process(final String group) throws Throwable
     {
-        final String groupShortName = this.authorityService.getShortName(group);
-        final Set<String> parents = this.groupParentsToAdd.get(group);
-        if (parents != null)
+        if (this.authorityService.authorityExists(group))
         {
-            for (final String parent : parents)
+            final String groupShortName = this.authorityService.getShortName(group);
+            final Set<String> parents = this.groupParentsToAdd.get(group);
+            if (parents != null)
             {
-                LOGGER.debug("Adding {} to group {}", groupShortName, parent);
-                this.authorityService.addAuthority(parent, group);
+                for (final String parent : parents)
+                {
+                    if (this.authorityService.authorityExists(parent))
+                    {
+                        LOGGER.debug("Adding {} to group {}", groupShortName, parent);
+                        this.authorityService.addAuthority(parent, group);
+                    }
+                    else
+                    {
+                        LOGGER.debug("Cannot add {} to group", groupShortName, parent);
+                    }
+                }
             }
+        }
+        else
+        {
+            LOGGER.debug("Cannot process non-existent group {}", group);
         }
     }
 }

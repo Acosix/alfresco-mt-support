@@ -78,6 +78,7 @@ import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.service.transaction.TransactionService;
+import org.alfresco.util.EqualsHelper;
 import org.alfresco.util.Pair;
 import org.alfresco.util.ParameterCheck;
 import org.alfresco.util.PropertyCheck;
@@ -1099,8 +1100,23 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
             groupsToDelete.addAll(allZoneGroups);
             groupsToDelete.removeAll(userRegistry.getGroupNames());
+
             usersToDelete.addAll(allZoneUsers);
-            usersToDelete.addAll(userRegistry.getPersonNames());
+            final String currentDomain = TenantUtil.getCurrentDomain();
+            for (final String userName : userRegistry.getPersonNames())
+            {
+                final String domainUser;
+                final String primaryDomain = this.tenantService.getPrimaryDomain(userName);
+                if (!EqualsHelper.nullSafeEquals(primaryDomain, currentDomain))
+                {
+                    domainUser = this.tenantService.getDomainUser(userName, currentDomain);
+                }
+                else
+                {
+                    domainUser = userName;
+                }
+                usersToDelete.remove(domainUser);
+            }
 
             final Set<String> authoritiesToDelete = new TreeSet<>();
             authoritiesToDelete.addAll(groupsToDelete);

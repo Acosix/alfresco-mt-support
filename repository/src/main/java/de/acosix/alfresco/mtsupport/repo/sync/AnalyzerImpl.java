@@ -147,6 +147,7 @@ public class AnalyzerImpl extends AbstractZonedSyncBatchWorker<NodeDescription> 
         final String groupShortName = this.authorityService.getShortName(groupName);
         final Set<String> groupZones = this.authorityService.getAuthorityZones(groupName);
 
+        // TODO Alfresco included update/creation in Analyzer, but we should aim to externalize this
         if (groupZones == null)
         {
             this.updateGroup(group, false);

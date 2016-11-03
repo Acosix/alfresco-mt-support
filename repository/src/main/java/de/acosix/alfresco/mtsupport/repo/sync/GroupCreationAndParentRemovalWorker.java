@@ -75,8 +75,12 @@ public class GroupCreationAndParentRemovalWorker extends AbstractSyncBatchWorker
             {
                 for (final String parent : parents)
                 {
-                    LOGGER.debug("Removing {} from group {}", groupShortName, parent);
-                    this.authorityService.removeAuthority(parent, group);
+                    if (this.authorityService.authorityExists(parent))
+                    {
+                        LOGGER.debug("Removing {} from group {}", groupShortName, parent);
+                        this.authorityService.removeAuthority(parent, group);
+                    }
+                    // else: not a problem
                 }
             }
         }

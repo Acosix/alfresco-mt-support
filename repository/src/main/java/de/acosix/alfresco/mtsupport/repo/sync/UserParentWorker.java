@@ -67,24 +67,42 @@ public class UserParentWorker extends AbstractSyncBatchWorker<String>
             domainUser = user;
         }
 
-        Set<String> parents = this.userParentsToAdd.get(user);
-        if (parents != null)
+        if (this.authorityService.authorityExists(domainUser))
         {
-            for (final String parent : parents)
+            Set<String> parents = this.userParentsToAdd.get(user);
+            if (parents != null)
             {
-                LOGGER.debug("Adding {} to group {}", domainUser, parent);
-                this.authorityService.addAuthority(parent, domainUser);
+                for (final String parent : parents)
+                {
+                    if (this.authorityService.authorityExists(parent))
+                    {
+                        LOGGER.debug("Adding {} to group {}", domainUser, parent);
+                        this.authorityService.addAuthority(parent, domainUser);
+                    }
+                    else
+                    {
+                        LOGGER.debug("Cannot add {} to group", domainUser, parent);
+                    }
+                }
+            }
+
+            parents = this.userParentsToRemove.get(user);
+            if (parents != null)
+            {
+                for (final String parent : parents)
+                {
+                    if (this.authorityService.authorityExists(parent))
+                    {
+                        LOGGER.debug("Removing {} fom group {}", domainUser, parent);
+                        this.authorityService.removeAuthority(parent, domainUser);
+                    }
+                    // else: not a problem
+                }
             }
         }
-
-        parents = this.userParentsToRemove.get(user);
-        if (parents != null)
+        else
         {
-            for (final String parent : parents)
-            {
-                LOGGER.debug("Removing {} fom group {}", domainUser, parent);
-                this.authorityService.removeAuthority(parent, domainUser);
-            }
+            LOGGER.debug("Cannot process non-existent user {}", domainUser);
         }
     }
 }
