@@ -10,8 +10,8 @@ This module is built to be compatible with Alfresco 5.0d and above. It may be us
 
 ## Added Multi-Tenant Features
 
- - [Multi-Tenant LDAP/AD](Multi-Tenant-LDAP-Authentication-and-User-Registry)
- - [Multi-Tenant Synchronization](Multi-Tenant-Synchronization)
+ - [Multi-Tenant LDAP/AD](https://github.com/Acosix/alfresco-mt-support/wiki/Multi-Tenant-LDAP-Authentication-and-User-Registry)
+ - [Multi-Tenant Synchronization](https://github.com/Acosix/alfresco-mt-support/wiki/Multi-Tenant-Synchronization)
 
 ## Roadmap
 
