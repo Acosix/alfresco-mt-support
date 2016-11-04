@@ -86,7 +86,7 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
 
 <!-- AMP packaging -->
 <dependency>
-    <groupId>de.acosix.alfresco.mtsupport</groupId>
+    <groupId>de.acosix.alfresco.utility</groupId>
     <artifactId>de.acosix.alfresco.utility.repo</artifactId>
     <version>1.0.0.0-SNAPSHOT</version>
     <type>amp</type>
@@ -114,12 +114,12 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
             <overlay>
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <type>amp</type>
             </overlay>
             <overlay>
                 <groupId>de.acosix.alfresco.mtsupport</groupId>
                 <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <type>amp</type>
             </overlay>
         </overlays>
     </configuration>
