@@ -201,12 +201,12 @@
     </bean>
 
     <bean id="ldapInitialDirContextFactory.template" scope="prototype"
-        class="org.alfresco.repo.security.authentication.ldap.LDAPInitialDirContextFactoryImpl">
+        class="${project.artifactId}.auth.ldap.LDAPInitialDirContextFactoryImpl">
         <property name="trustStorePath" value="${ldap.thisTenant.truststore.path}" />
         <property name="trustStoreType" value="${ldap.thisTenant.truststore.type}" />
         <property name="trustStorePassPhrase" value="${ldap.thisTenant.truststore.passphrase}" />
 
-        <property name="initialDirContextEnvironment">
+        <property name="authenticatedEnvironment">
             <map>
                 <entry key="java.naming.factory.initial"
                     value="${ldap.authentication.thisTenant.java.naming.factory.initial:${ldap.thisTenant.java.naming.factory.initial}}" />
@@ -225,7 +225,7 @@
                 <entry key="java.naming.security.authentication" value="${ldap.authentication.thisTenant.java.naming.security.authentication:${ldap.thisTenant.java.naming.security.authentication}}" />
             </map>
         </property>
-        <property name="defaultIntialDirContextEnvironment">
+        <property name="defaultEnvironment">
             <map>
                 <!-- when the fallback order is "synchronization -> authentication -> generic" we do so only for compatibility with configuration 
                     "design" from out-of-the-box LDAP subsystems -->
@@ -255,13 +255,13 @@
         </property>
         <property name="poolSystemProperties">
             <map>
-                <entry key="com.sun.jndi.ldap.connect.pool.authentication" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.authentication}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.debug" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.debug}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.initsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.initsize}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.maxsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.maxsize}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.prefsize" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.prefsize}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.protocol" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.protocol}" />
-                <entry key="com.sun.jndi.ldap.connect.pool.timeout" value="${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.pool.timeout}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.authentication" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.authentication}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.debug" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.debug}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.initsize" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.initsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.maxsize" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.maxsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.prefsize" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.prefsize}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.protocol" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.protocol}" />
+                <entry key="com.sun.jndi.ldap.connect.pool.timeout" value="${ldap.pooling.com.sun.jndi.ldap.connect.pool.timeout}" />
             </map>
         </property>
     </bean>
