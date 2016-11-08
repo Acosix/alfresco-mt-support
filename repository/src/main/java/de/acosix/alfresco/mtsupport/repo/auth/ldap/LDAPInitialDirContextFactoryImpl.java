@@ -105,8 +105,7 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
 
         try
         {
-            @SuppressWarnings("unused")
-            final InitialDirContext dirContext = new InitialDirContext(new Hashtable<>(config));
+            new InitialDirContext(new Hashtable<>(config));
             LOGGER.warn("LDAP server supports anonymous bind {}", config.get(Context.PROVIDER_URL));
         }
         catch (javax.naming.AuthenticationException | AuthenticationNotSupportedException ax)
@@ -125,8 +124,7 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
 
         try
         {
-            @SuppressWarnings("unused")
-            final InitialDirContext dirContext = new InitialDirContext(new Hashtable<>(config));
+            new InitialDirContext(new Hashtable<>(config));
             throw new AuthenticationException("The ldap server at " + config.get(Context.PROVIDER_URL)
                     + " falls back to use anonymous bind if invalid security credentials are presented. This is not supported.");
         }
@@ -146,8 +144,7 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
         config.put(Context.SECURITY_CREDENTIALS, "daftAsABrush");
         try
         {
-            @SuppressWarnings("unused")
-            final InitialDirContext dirContext = new InitialDirContext(new Hashtable<>(config));
+            new InitialDirContext(new Hashtable<>(config));
             throw new AuthenticationException("The ldap server at " + config.get(Context.PROVIDER_URL)
                     + " falls back to use anonymous bind if invalid security credentials are presented. This is not supported.");
         }
@@ -170,8 +167,7 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
 
             try
             {
-                @SuppressWarnings("unused")
-                final InitialDirContext dirContext = new InitialDirContext(new Hashtable<>(config));
+                new InitialDirContext(new Hashtable<>(config));
                 throw new AuthenticationException("The ldap server at " + config.get(Context.PROVIDER_URL)
                         + " falls back to use anonymous bind for a known principal if invalid security credentials are presented. This is not supported.");
             }
@@ -383,29 +379,29 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
         if (principal == null)
         {
             // failed before we tried to do anything
-            diagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
-            throw new AuthenticationException("Null user name provided.", diagnostic);
+            effectiveDiagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
+            throw new AuthenticationException("Null user name provided.", effectiveDiagnostic);
         }
 
         if (principal.length() == 0)
         {
-            diagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
-            throw new AuthenticationException("Empty user name provided.", diagnostic);
+            effectiveDiagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
+            throw new AuthenticationException("Empty user name provided.", effectiveDiagnostic);
         }
 
         if (credentials == null)
         {
-            diagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
-            throw new AuthenticationException("No credentials provided.", diagnostic);
+            effectiveDiagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
+            throw new AuthenticationException("No credentials provided.", effectiveDiagnostic);
         }
 
         if (credentials.length() == 0)
         {
-            diagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
-            throw new AuthenticationException("Empty credentials provided.", diagnostic);
+            effectiveDiagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, false, null);
+            throw new AuthenticationException("Empty credentials provided.", effectiveDiagnostic);
         }
 
-        diagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, true, null);
+        effectiveDiagnostic.addStep(AuthenticationDiagnostic.STEP_KEY_VALIDATION, true, null);
 
         final Map<String, String> config = new HashMap<>(this.authenticatedEnvironment.size());
         config.putAll(this.authenticatedEnvironment);
@@ -479,7 +475,7 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
 
             // failed to connect
             final Object[] args = { providerURL, message.toString() };
-            throw new AuthenticationException("authentication.err.communication", effectiveDiagnostic, args, cause);
+            throw new AuthenticationException("authentication.err.communication", effectiveDiagnostic, args, ce);
         }
         catch (final NamingException nx)
         {
@@ -545,7 +541,22 @@ public class LDAPInitialDirContextFactoryImpl implements LDAPInitialDirContextFa
         }
         try
         {
-            ks.load(new FileInputStream(this.trustStorePath), this.trustStorePassPhrase.toCharArray());
+            final FileInputStream fis = new FileInputStream(this.trustStorePath);
+            try
+            {
+                ks.load(fis, this.trustStorePassPhrase.toCharArray());
+            }
+            finally
+            {
+                try
+                {
+                    fis.close();
+                }
+                catch (final IOException ignore)
+                {
+                    // NO-OP
+                }
+            }
         }
         catch (final FileNotFoundException fnfe)
         {
