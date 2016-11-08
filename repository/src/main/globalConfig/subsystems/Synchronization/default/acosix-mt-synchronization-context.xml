@@ -44,6 +44,24 @@
         </property>
         <property name="propertiesSource" ref="global-properties" />
     </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="externalUserControl" />
+        <property name="propertyPattern" value="synchronization.thisTenant.externalUserControl" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="externalUserControlSubsystemName" />
+        <property name="propertyPattern" value="synchronization.thisTenant.externalUserControlSubsystemName" />
+    </bean>
 
     <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
         <property name="effectiveProperties" ref="${moduleId}-effective-properties" />

@@ -107,7 +107,7 @@ import org.springframework.extensions.surf.util.I18NUtil;
  * multiple nodes to improve scaling.
  *
  * Since existing default {@link UserRegistry user registry} implementations may not be tenant-aware this implementation will only use
- * registries especially {@link MTAwareUserRegistry marked to be multi-tenancy aware} when synchronising users and groups in any tenant
+ * registries especially {@link TenantAwareUserRegistry marked to be multi-tenancy aware} when synchronising users and groups in any tenant
  * other than the default tenant.
  *
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
@@ -219,6 +219,11 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     protected NameChecker nameChecker;
 
     protected SysAdminParams sysAdminParams;
+
+    // introduced with 5.2 - adapted to be tenant aware
+    protected Map<String, String> externalUserControl = Collections.emptyMap();
+
+    protected Map<String, String> externalUserControlSubsystemName = Collections.emptyMap();
 
     protected TenantService tenantService;
 
@@ -421,6 +426,24 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     public void setSysAdminParams(final SysAdminParams sysAdminParams)
     {
         this.sysAdminParams = sysAdminParams;
+    }
+
+    /**
+     * @param externalUserControl
+     *            the externalUserControl to set
+     */
+    public void setExternalUserControl(final Map<String, String> externalUserControl)
+    {
+        this.externalUserControl = externalUserControl;
+    }
+
+    /**
+     * @param externalUserControlSubsystemName
+     *            the externalUserControlSubsystemName to set
+     */
+    public void setExternalUserControlSubsystemName(final Map<String, String> externalUserControlSubsystemName)
+    {
+        this.externalUserControlSubsystemName = externalUserControlSubsystemName;
     }
 
     /**
@@ -731,9 +754,9 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     {
         final String currentDomain = TenantUtil.getCurrentDomain();
         boolean active;
-        if (plugin instanceof MTAwareUserRegistry)
+        if (plugin instanceof TenantAwareUserRegistry)
         {
-            active = ((MTAwareUserRegistry) plugin).isActiveForTenant(currentDomain);
+            active = ((TenantAwareUserRegistry) plugin).isActiveForTenant(currentDomain);
         }
         else if (TenantService.DEFAULT_DOMAIN.equals(currentDomain))
         {
@@ -908,16 +931,16 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     {
         final String tenantDomain = TenantUtil.getCurrentDomain();
         final String batchId;
-        final String logTenantDomain;
+        final String technicalTenantIdentifier;
         if (TenantService.DEFAULT_DOMAIN.equals(tenantDomain))
         {
             batchId = id;
-            logTenantDomain = TenantUtil.DEFAULT_TENANT;
+            technicalTenantIdentifier = TenantUtil.DEFAULT_TENANT;
         }
         else
         {
             batchId = this.tenantService.getName(id);
-            logTenantDomain = tenantDomain;
+            technicalTenantIdentifier = tenantDomain;
         }
 
         final String reservedBatchProcessNames[] = { SyncProcess.GROUP_ANALYSIS.getTitle(batchId),
@@ -937,11 +960,11 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                 LOGGER.info(
                         "Retrieving groups changed since {} from user registry {} of tenant {}", DateFormat
                                 .getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.getDefault()).format(groupLastModified),
-                        id, logTenantDomain);
+                        id, technicalTenantIdentifier);
             }
             else
             {
-                LOGGER.info("Retrieving all groups from user registry {} of tenant {}", id, logTenantDomain);
+                LOGGER.info("Retrieving all groups from user registry {} of tenant {}", id, technicalTenantIdentifier);
             }
 
             final BatchProcessor<NodeDescription> groupAnalysisProcessor = new BatchProcessor<>(
@@ -959,11 +982,11 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             {
                 LOGGER.info("Retrieving users changed since {} from user registry {} of tenant {}", DateFormat
                         .getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.getDefault()).format(personLastModified), id,
-                        logTenantDomain);
+                        technicalTenantIdentifier);
             }
             else
             {
-                LOGGER.info("Retrieving all users from user registry {} of tenant {}", id, logTenantDomain);
+                LOGGER.info("Retrieving all users from user registry {} of tenant {}", id, technicalTenantIdentifier);
             }
 
             final BatchProcessor<NodeDescription> userProcessor = new BatchProcessor<>(
@@ -971,7 +994,27 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                     new UserRegistryNodeCollectionWorkProvider(userRegistry.getPersons(groupLastModified)), this.workerThreads,
                     USER_REGISTRY_ENTITY_BATCH_SIZE, this.applicationEventPublisher,
                     LogFactory.getLog(TenantAwareChainingUserRegistrySynchronizer.class), this.loggingInterval);
-            final PersonWorker userWorker = this.createPersonWorker(id, visitedIds, allIds);
+
+            UserAccountInterpreter accountInterpreter;
+            if (userRegistry instanceof EnhancedUserRegistry)
+            {
+                final String externalUserControl = this.externalUserControl.get(technicalTenantIdentifier);
+                final String externalUserControlSubsystemName = this.externalUserControlSubsystemName.get(technicalTenantIdentifier);
+                if (Boolean.parseBoolean(externalUserControl) && id.equals(externalUserControlSubsystemName))
+                {
+                    accountInterpreter = ((EnhancedUserRegistry) userRegistry).getUserAccountInterpreter();
+                }
+                else
+                {
+                    accountInterpreter = null;
+                }
+            }
+            else
+            {
+                accountInterpreter = null;
+            }
+
+            final PersonWorker userWorker = this.createPersonWorker(id, visitedIds, allIds, accountInterpreter);
             int userProcessedCount = userProcessor.process(userWorker, splitTxns);
 
             this.processUserAssociation(batchId, groupAnalyzer, splitTxns);
@@ -997,7 +1040,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             final Object statusParams[] = { Integer.valueOf(userProcessedCount), Integer.valueOf(groupProcessedCount) };
             final String statusMessage = I18NUtil.getMessage("synchronization.summary.status", statusParams);
 
-            LOGGER.info("Finished synchronizing users and groups with user registry {} of tenant {}", id, logTenantDomain);
+            LOGGER.info("Finished synchronizing users and groups with user registry {} of tenant {}", id, technicalTenantIdentifier);
             LOGGER.info(statusMessage);
 
             this.notifySyncDirectoryEnd(id, statusMessage);
@@ -1425,7 +1468,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         return groupAnalyzer;
     }
 
-    protected PersonWorker createPersonWorker(final String id, final Collection<String> visitedIds, final Collection<String> allIds)
+    protected PersonWorker createPersonWorker(final String id, final Collection<String> visitedIds, final Collection<String> allIds,
+            final UserAccountInterpreter accountInterpreter)
     {
         final String zoneId = asZoneId(id);
         final Set<String> zones = new HashSet<>();
@@ -1433,7 +1477,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         zones.add(zoneId);
 
         final PersonWorker personWorker = new PersonWorkerImpl(id, zoneId, zones, visitedIds, allIds, this.allowDeletions,
-                this.createComponentLookupCallback());
+                accountInterpreter, this.createComponentLookupCallback());
         return personWorker;
     }
 

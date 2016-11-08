@@ -28,6 +28,7 @@ import org.alfresco.model.ContentModel;
 import org.alfresco.repo.dictionary.constraint.NameChecker;
 import org.alfresco.repo.security.sync.NodeDescription;
 import org.alfresco.service.cmr.security.AuthorityService;
+import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
 import org.alfresco.util.EqualsHelper;
 import org.slf4j.Logger;
@@ -47,11 +48,15 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
     protected final AtomicLong latestModified = new AtomicLong(-1l);
 
+    protected UserAccountInterpreter accountInterpreter;
+
     public PersonWorkerImpl(final String id, final String zoneId, final Set<String> targetZoneIds, final Collection<String> visitedIds,
-            final Collection<String> allIds, final boolean allowDeletions, final ComponentLookupCallback componentLookup)
+            final Collection<String> allIds, final boolean allowDeletions, final UserAccountInterpreter accountInterpreter,
+            final ComponentLookupCallback componentLookup)
     {
         super(id, zoneId, targetZoneIds, visitedIds, allIds, allowDeletions, componentLookup);
 
+        this.accountInterpreter = accountInterpreter;
         this.nameChecker = componentLookup.getComponent("nameChecker", NameChecker.class);
     }
 
@@ -98,6 +103,17 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
             domainUser = personName;
         }
         personProperties.put(ContentModel.PROP_USERNAME, domainUser);
+
+        if (this.accountInterpreter != null)
+        {
+            final QName propertyNameToCheck = QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, "userAccountStatusProperty");
+            final Serializable propertyValue = personProperties.get(propertyNameToCheck);
+            final Boolean disabled = this.accountInterpreter.isUserAccountDisabled(propertyValue);
+            if (disabled != null)
+            {
+                personProperties.put(ContentModel.PROP_ENABLED, disabled);
+            }
+        }
 
         this.nameChecker.evaluate(domainUser);
 

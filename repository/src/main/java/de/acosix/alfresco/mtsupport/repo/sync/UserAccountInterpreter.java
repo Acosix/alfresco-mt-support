@@ -15,25 +15,28 @@
  */
 package de.acosix.alfresco.mtsupport.repo.sync;
 
+import java.io.Serializable;
+
 import org.alfresco.repo.security.sync.UserRegistry;
-import org.alfresco.repo.tenant.TenantService;
 
 /**
- * This special interface marks any user registry that is capable of handling more than just the {@link TenantService#DEFAULT_DOMAIN default
- * tenant}.
+ * Instances of this interface provide callback operations for {@link UserRegistry} synchronising client code to interpret values from user
+ * properties.
  *
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
-public interface MTAwareUserRegistry extends UserRegistry
+public interface UserAccountInterpreter
 {
 
     /**
-     * Checks if the user registry has been enabled to handle a specific tenant.
+     * Checks a specific property value (typically mapped as cm:userAccountStatusProperty) against the expected value denoting a disabled
+     * user account.
      *
-     * @param tenantDomain
-     *            the tenant to check
-     * @return {@code true} if user registry has been enabled to handle tenant, {@code false} otherwise
+     * @param userAccountStatus
+     *            the property value to check
+     * @return {@code true} if the user account should be considered disabled based on the provided value, {@code null} if no decisive
+     *         judgement can be passed
      */
-    boolean isActiveForTenant(String tenantDomain);
+    Boolean isUserAccountDisabled(Serializable userAccountStatus);
 
 }

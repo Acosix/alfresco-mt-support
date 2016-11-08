@@ -205,7 +205,7 @@ public class TenantRoutingAuthenticationComponentFacade extends AbstractAuthenti
             {
                 LOGGER.debug("Failing authentication for user {} as tenant {} has not been enabled for this authentication subsystem",
                         userName, TenantUtil.DEFAULT_TENANT);
-                throw new AuthenticationException(TenantUtil.DEFAULT_TENANT + " tenant does not support LDAP authentication");
+                throw new AuthenticationException(TenantUtil.DEFAULT_TENANT + " tenant does not support authentication");
             }
 
             relevantAuthenticationComponent = TenantBeanUtils.getBeanForTenant(this.applicationContext, this.beanName,
@@ -215,7 +215,7 @@ public class TenantRoutingAuthenticationComponentFacade extends AbstractAuthenti
         {
             LOGGER.debug("Failing authentication for user {} as tenant {} has not been enabled for this authentication subsystem", userName,
                     primaryDomain);
-            throw new AuthenticationException(primaryDomain + " tenant does not support LDAP authentication");
+            throw new AuthenticationException(primaryDomain + " tenant does not support authentication");
         }
         else
         {

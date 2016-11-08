@@ -40,6 +40,7 @@
                 <value>authenticationComponent</value>
                 <value>ldapInitialDirContextFactory</value>
                 <value>userRegistry</value>
+                <value>userAccountInterpreter</value>
             </list>
         </property>
     </bean>
@@ -121,7 +122,7 @@
         <property name="propertyPattern" value="ldap.authentication.thisTenant.authenticateFTP" />
     </bean>
 
-    <bean id="authenticationComponent.base" abstract="true" class="${project.artifactId}.auth.TenantAwareLDAPAuthenticationComponent"
+    <bean id="authenticationComponent.base" abstract="true" class="${project.artifactId}.auth.ldap.TenantAwareLDAPAuthenticationComponent"
         parent="authenticationComponentBase">
         <property name="transactionService" ref="transactionService" />
         <property name="nodeService" ref="nodeService" />
@@ -148,7 +149,7 @@
         <property name="tenantAdminService" ref="tenantAdminService" />
     </bean>
 
-    <bean id="userRegistry.base" abstract="true" class="org.alfresco.repo.security.sync.ldap.LDAPUserRegistry">
+    <bean id="userRegistry.base" abstract="true" class="${project.artifactId}.auth.ldap.EnhancedLDAPUserRegistry">
         <property name="namespaceService" ref="namespaceService" />
     </bean>
 
@@ -180,6 +181,7 @@
                 <entry key="cm:homeFolderProvider">
                     <null />
                 </entry>
+                <entry key="cm:userAccountStatusProperty" value="${ldap.synchronization.userAccountStatusProperty}" />
             </map>
         </property>
         <property name="personAttributeDefaults">
@@ -195,6 +197,7 @@
         </property>
         <property name="enableProgressEstimation" value="${ldap.synchronization.thisTenant.enableProgressEstimation}" />
         <property name="LDAPInitialDirContextFactory" ref="ldapInitialDirContextFactory.tenant-${tenant}" />
+        <property name="userAccountInterpreter" ref="userAccountInterpreter.tenant-${tenant}" />
     </bean>
 
     <bean id="ldapInitialDirContextFactory.template" scope="prototype"

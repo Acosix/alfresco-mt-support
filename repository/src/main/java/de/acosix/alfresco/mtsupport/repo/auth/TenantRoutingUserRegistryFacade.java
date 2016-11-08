@@ -40,13 +40,15 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
 import de.acosix.alfresco.mtsupport.repo.beans.TenantBeanUtils;
-import de.acosix.alfresco.mtsupport.repo.sync.MTAwareUserRegistry;
+import de.acosix.alfresco.mtsupport.repo.sync.EnhancedUserRegistry;
+import de.acosix.alfresco.mtsupport.repo.sync.TenantAwareUserRegistry;
+import de.acosix.alfresco.mtsupport.repo.sync.UserAccountInterpreter;
 
 /**
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
 public class TenantRoutingUserRegistryFacade
-        implements MTAwareUserRegistry, InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
+        implements TenantAwareUserRegistry, EnhancedUserRegistry, InitializingBean, ApplicationContextAware, ActivateableBean, BeanNameAware
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TenantRoutingUserRegistryFacade.class);
@@ -242,6 +244,28 @@ public class TenantRoutingUserRegistryFacade
             results = Collections.emptySet();
         }
         return results;
+    }
+
+    /**
+     *
+     * {@inheritDoc}
+     */
+    @Override
+    public UserAccountInterpreter getUserAccountInterpreter()
+    {
+        final UserRegistry userRegistry = this.getUserRegistryForCurrentDomain();
+
+        UserAccountInterpreter result;
+        if (userRegistry instanceof EnhancedUserRegistry)
+        {
+            result = ((EnhancedUserRegistry) userRegistry).getUserAccountInterpreter();
+        }
+        else
+        {
+            result = null;
+        }
+
+        return result;
     }
 
     protected UserRegistry getUserRegistryForCurrentDomain()
