@@ -1,0 +1,27 @@
+dn: ou=users,dc=acosix,dc=de
+changetype: add
+ou: users
+objectclass: organizationalUnit
+
+dn: ou=groups,dc=acosix,dc=de
+changetype: add
+ou: groups
+objectclass: organizationalUnit
+
+dn: cn=Axel Faust,ou=users,dc=acosix,dc=de
+changetype: add
+cn: Axel Faust
+uid: afaust
+sn: Faust
+givenName: Axel
+userPassword: {SSHA}vYrsUWWk09e1CBxm7qJtYZZblnZOYBgA
+objectclass: inetOrgPerson
+
+dn: cn=Max Mustermann,ou=users,dc=acosix,dc=de
+changetype: add
+cn: Max Mustermann
+uid: mmustermann
+sn: Mustermann
+givenName: Max
+userPassword: {SSHA}AttSkyjJxexJKl6QfBd+oVWtc1ntoBsK
+objectclass: inetOrgPerson
