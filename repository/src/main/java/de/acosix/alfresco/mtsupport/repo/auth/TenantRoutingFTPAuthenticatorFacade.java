@@ -128,7 +128,7 @@ public class TenantRoutingFTPAuthenticatorFacade extends AlfrescoFtpAuthenticato
     {
         final AtomicBoolean isActive = new AtomicBoolean(false);
 
-        LOGGER.debug("Checking isActive for enabled tenants (until first active tenant)");
+        LOGGER.trace("Checking isActive for enabled tenants (until first active tenant)");
         for (final String tenantDomain : this.enabledTenants)
         {
             if (!isActive.get())
@@ -136,7 +136,7 @@ public class TenantRoutingFTPAuthenticatorFacade extends AlfrescoFtpAuthenticato
                 isActive.set(this.isActive(tenantDomain));
             }
         }
-        LOGGER.debug("Component is active: {}", isActive.get());
+        LOGGER.trace("Component is active: {}", isActive.get());
 
         return isActive.get();
     }
