@@ -36,6 +36,9 @@ This addon is being built using the [Acosix Alfresco Maven framework](https://gi
 
 This project can be build simply by executing the standard Maven build lifecycles for package, install or deploy depending on the intent for further processing. A Java Development Kit (JDK) version 8 or higher is required for the build.
 
+Integration tests can be run in embedded Tomcat, UnboundID LDAP and H2 database via
+```mvn clean integration-test -P arquillian-tomcat-embed```
+
 ## Dependency in Alfresco SDK
 
 The simplest option to include the addon in an All-in-One project is by declaring a dependency to the installable JAR artifact. Alternatively, the AMP package may be included which typically requires additional configuration in addition to the dependency.

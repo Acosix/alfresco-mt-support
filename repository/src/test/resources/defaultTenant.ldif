@@ -1,0 +1,32 @@
+dn: ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+ou: defaultTenant
+objectclass: organizationalUnit
+
+dn: ou=users,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+ou: users
+objectclass: organizationalUnit
+
+dn: ou=groups,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+ou: groups
+objectclass: organizationalUnit
+
+dn: cn=Axel Faust,ou=users,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: Axel Faust
+uid: afaust
+sn: Faust
+givenName: Axel
+userPassword: afaust
+objectclass: inetOrgPerson
+
+dn: cn=Max Mustermann,ou=users,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: Max Mustermann
+uid: mmustermann
+sn: Mustermann
+givenName: Max
+userPassword: mmustermann
+objectclass: inetOrgPerson

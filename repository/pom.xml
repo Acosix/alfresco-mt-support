@@ -210,25 +210,47 @@
                 <artifactId>ldap-maven-plugin</artifactId>
                 <version>1.3.2</version>
                 <configuration>
-                    <serverType>apacheds</serverType>
+                    <!-- <serverType>apacheds</serverType> -->
                     <monitorPort>11389</monitorPort>
                     <monitorKey>ldap</monitorKey>
                     <daemon>true</daemon>
                     <rootDn>dc=acosix,dc=de</rootDn>
-                    <authDn>uid=admin,dc=acosix,dc=de</authDn>
+                    <authDn>uid=admin,ou=system</authDn>
+                    <passwd>secret</passwd>
                     <ldapPort>10389</ldapPort>
-                    <ldifFile>src/test/resources/server-a.ldif</ldifFile>
                 </configuration>
                 <executions>
                     <execution>
-                        <id>start-server</id>
+                        <id>start-ldap-server</id>
                         <phase>pre-integration-test</phase>
                         <goals>
                             <goal>run</goal>
                         </goals>
+                        <configuration>
+                            <ldifFile>src/test/resources/server.ldif</ldifFile>
+                        </configuration>
                     </execution>
                     <execution>
-                        <id>stop-server</id>
+                        <id>load-ldap-server-data</id>
+                        <phase>pre-integration-test</phase>
+                        <goals>
+                            <goal>load</goal>
+                        </goals>
+                        <configuration>
+                            <host>localhost</host>
+                            <port>10389</port>
+                            <sources>
+                                <ldif>${project.basedir}/src/test/resources/defaultTenant.ldif</ldif>
+                                <ldif>${project.basedir}/src/test/resources/tenantAlpha.ldif</ldif>
+                                <ldif>${project.basedir}/src/test/resources/tenantBeta.ldif</ldif>
+                                <!-- 
+                                <ldif>${project.basedir}/src/test/resources/tenantGamma.ldif</ldif>
+                                 -->
+                            </sources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>stop-ldap-server</id>
                         <phase>post-integration-test</phase>
                         <goals>
                             <goal>stop</goal>

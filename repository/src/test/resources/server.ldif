@@ -1,0 +1,7 @@
+dn: ou=users,dc=acosix,dc=de
+ou: users
+objectclass: organizationalUnit
+
+dn: ou=groups,dc=acosix,dc=de
+ou: groups
+objectclass: organizationalUnit

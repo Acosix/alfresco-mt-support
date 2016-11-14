@@ -1,0 +1,32 @@
+dn: ou=tenantBeta,dc=acosix,dc=de
+changetype: add
+ou: tenantBeta
+objectclass: organizationalUnit
+
+dn: ou=users,ou=tenantBeta,dc=acosix,dc=de
+changetype: add
+ou: users
+objectclass: organizationalUnit
+
+dn: ou=groups,ou=tenantBeta,dc=acosix,dc=de
+changetype: add
+ou: groups
+objectclass: organizationalUnit
+
+dn: uid=afaust,ou=users,ou=tenantBeta,dc=acosix,dc=de
+changetype: add
+cn: Axel Faust
+uid: afaust
+sn: Faust
+givenName: Axel
+userPassword: afaust
+objectclass: inetOrgPerson
+
+dn: uid=mmustermann,ou=users,ou=tenantBeta,dc=acosix,dc=de
+changetype: add
+cn: Max Mustermann
+uid: mmustermann
+sn: Mustermann
+givenName: Max
+userPassword: mmustermann
+objectclass: inetOrgPerson

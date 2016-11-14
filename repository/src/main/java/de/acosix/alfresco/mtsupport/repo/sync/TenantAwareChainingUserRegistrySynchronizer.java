@@ -1205,7 +1205,14 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             }
             catch (final RuntimeException re)
             {
-                LOGGER.debug("Subsystem {} cannot be used in synchronisation", re);
+                if (LOGGER.isTraceEnabled())
+                {
+                    LOGGER.trace("Subsystem {} cannot be used in synchronisation", id, re);
+                }
+                else
+                {
+                    LOGGER.debug("Subsystem {} cannot be used in synchronisation", id);
+                }
                 continue;
             }
 
