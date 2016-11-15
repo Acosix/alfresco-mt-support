@@ -5,7 +5,7 @@
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
     <bean id="${moduleId}-enhanceAuthenticationChildApplicationContextManager" class="de.acosix.alfresco.utility.common.spring.ImplementationClassReplacingBeanDefinitionRegistryPostProcessor">
-        <property name="activePropertyKey" value="acosix.mtsupport.authentication.enhanceChildApplicationContextManager" />
+        <property name="enabledPropertyKey" value="${moduleId}.authentication.enhanceChildApplicationContextManager" />
         <property name="propertiesSource" ref="global-properties" />
 
         <property name="targetBeanName" value="Authentication" />
@@ -14,7 +14,7 @@
     </bean>
     
     <bean id="${moduleId}-enhanceSynchronizationChildApplicationContextManager" class="de.acosix.alfresco.utility.common.spring.ImplementationClassReplacingBeanDefinitionRegistryPostProcessor">
-        <property name="activePropertyKey" value="acosix.mtsupport.synchronization.enhanceChildApplicationContextManager" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enhanceChildApplicationContextManager" />
         <property name="propertiesSource" ref="global-properties" />
 
         <property name="targetBeanName" value="Synchronization" />

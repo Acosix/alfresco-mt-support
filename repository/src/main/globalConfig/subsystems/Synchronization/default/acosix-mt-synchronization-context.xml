@@ -34,8 +34,8 @@
     </bean>
 
     <bean id="${moduleId}-enableMultiTenantUserRegistrySynchronization" class="de.acosix.alfresco.utility.common.spring.BeanDefinitionFromPropertiesPostProcessor">
-        <property name="enabledProperty" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
-        <property name="propertyPrefix" value="acosix.mtsupport.synchronization" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="propertyPrefix" value="${moduleId}.synchronization" />
         <property name="beanTypes">
             <list>
                 <value>userRegistrySynchronizer</value>
@@ -47,7 +47,7 @@
     
     <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
         <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
-        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
         <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
         <property name="beanName" value="userRegistrySynchronizer" />
         <property name="propertyName" value="externalUserControl" />
@@ -56,7 +56,7 @@
     
     <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
         <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
-        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
         <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
         <property name="beanName" value="userRegistrySynchronizer" />
         <property name="propertyName" value="externalUserControlSubsystemName" />
@@ -65,7 +65,7 @@
 
     <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
         <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
-        <property name="enabledPropertyKey" value="acosix.mtsupport.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
         <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
         <property name="beanNames">
             <list>
