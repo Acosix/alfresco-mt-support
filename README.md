@@ -65,14 +65,14 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
 <dependency>
     <groupId>de.acosix.alfresco.utility</groupId>
     <artifactId>de.acosix.alfresco.utility.common</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <type>jar</type>
 </dependency>
 
 <dependency>
     <groupId>de.acosix.alfresco.utility</groupId>
     <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <type>jar</type>
     <classifier>installable</classifier>
 </dependency>
@@ -80,7 +80,7 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
 <dependency>
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <type>jar</type>
     <classifier>installable</classifier>
 </dependency>
@@ -91,14 +91,14 @@ In order to use a pre-built SNAPSHOT artifact published to the Open Source Sonat
 <dependency>
     <groupId>de.acosix.alfresco.utility</groupId>
     <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <type>amp</type>
 </dependency>
 
 <dependency>
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <type>amp</type>
 </dependency>
 
@@ -136,13 +136,13 @@ For Alfresco SDK 3 beta users:
     <moduleDependency>
         <groupId>de.acosix.alfresco.utility</groupId>
         <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-        <version>1.0.0.0-SNAPSHOT</version>
+        <version>1.0.0.0</version>
         <type>amp</type>
     </moduleDependency>
     <moduleDependency>
         <groupId>de.acosix.alfresco.mtsupport</groupId>
         <artifactId>de.acosix.alfresco.mtsupport.repo</artifactId>
-        <version>1.0.0.0-SNAPSHOT</version>
+        <version>1.0.0.0</version>
         <type>amp</type>
     </moduleDependency>
 </platformModules>
