@@ -36,8 +36,11 @@ This addon is being built using the [Acosix Alfresco Maven framework](https://gi
 
 This project can be build simply by executing the standard Maven build lifecycles for package, install or deploy depending on the intent for further processing. A Java Development Kit (JDK) version 8 or higher is required for the build.
 
-Integration tests can be run in embedded Tomcat, UnboundID LDAP and H2 database via
-```mvn clean integration-test -P arquillian-tomcat-embed```
+For integration tests this project includes an embedded UnboundID LDAP server and H2 database. Integration tests require that the project be executed with an Arquillian test profile and container. A default profile "arquillian-tomcat-embed" has been inherited from the Acosix Maven Parent POM, but is not active by default. It has to be activated for integration tests to run, using the -P flag of the Maven executable:
+
+```text
+mvn clean install -P arquillian-tomcat-embed
+```
 
 ## Dependency in Alfresco SDK
 
