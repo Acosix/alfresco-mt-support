@@ -138,6 +138,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         /**
          * Retrieves the matching component from an enclosing {@link TenantAwareChainingUserRegistrySynchronizer} instance.
          *
+         * @param <T>
+         *            the expected base type of the component
          * @param name
          *            the name of the component
          * @param iface
@@ -307,7 +309,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setAuthorityService(AuthorityService)
+     * @param authorityService
+     *            the authorityService to set
      */
     public void setAuthorityService(final AuthorityService authorityService)
     {
@@ -315,7 +318,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setPersonService(PersonService)
+     * @param personService
+     *            the personService to set
      */
     public void setPersonService(final PersonService personService)
     {
@@ -323,7 +327,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setAttributeService(AttributeService)
+     * @param attributeService
+     *            the attributeService to set
      */
     public void setAttributeService(final AttributeService attributeService)
     {
@@ -331,7 +336,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setTransactionService(TransactionService)
+     * @param transactionService
+     *            the transactionService to set
      */
     public void setTransactionService(final TransactionService transactionService)
     {
@@ -347,7 +353,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setSyncWhenMissingPeopleLogIn(boolean)
+     * @param syncWhenMissingPeopleLogIn
+     *            the syncWhenMissingPeopleLogIn to set
      */
     public void setSyncWhenMissingPeopleLogIn(final boolean syncWhenMissingPeopleLogIn)
     {
@@ -355,7 +362,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setSyncOnStartup(boolean)
+     * @param syncOnStartup
+     *            the syncOnStartup to set
      */
     public void setSyncOnStartup(final boolean syncOnStartup)
     {
@@ -363,7 +371,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setAutoCreatePeopleOnLogin(boolean)
+     * @param autoCreatePeopleOnLogin
+     *            the autoCreatePeopleOnLogin to set
      */
     public void setAutoCreatePeopleOnLogin(final boolean autoCreatePeopleOnLogin)
     {
@@ -371,7 +380,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setLoggingInterval(int)
+     * @param loggingInterval
+     *            the loggingInterval to set
      */
     public void setLoggingInterval(final int loggingInterval)
     {
@@ -383,7 +393,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setWorkerThreads(int)
+     * @param workerThreads
+     *            the workerThreads to set
      */
     public void setWorkerThreads(final int workerThreads)
     {
@@ -395,7 +406,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setAllowDeletions(boolean)
+     * @param allowDeletions
+     *            the allowDeletions to set
      */
     public void setAllowDeletions(final boolean allowDeletions)
     {
@@ -403,7 +415,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     }
 
     /**
-     * @see ChainingUserRegistrySynchronizer#setSyncDelete(boolean)
+     * @param syncDelete
+     *            the syncDelete to set
      */
     public void setSyncDelete(final boolean syncDelete)
     {
