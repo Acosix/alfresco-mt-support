@@ -6,12 +6,12 @@
     <parent>
         <groupId>de.acosix.alfresco.maven</groupId>
         <artifactId>de.acosix.alfresco.maven.module.parent</artifactId>
-        <version>1.0.0.0-SNAPSHOT</version>
+        <version>1.0.0.0</version>
     </parent>
 
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.parent</artifactId>
-    <version>1.0.0.0-SNAPSHOT</version>
+    <version>1.0.0.0</version>
     <packaging>pom</packaging>
 
     <name>Alfresco Multi-Tenant Support - Parent</name>
@@ -63,20 +63,20 @@
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.common</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <version>1.0.0.0</version>
             </dependency>        
         
             <dependency>
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.repo</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <version>1.0.0.0</version>
             </dependency>
             
             <dependency>
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <version>1.0.0.0</version>
                 <type>jar</type>
                 <classifier>installable</classifier>
             </dependency>
@@ -85,7 +85,7 @@
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.share</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0-SNAPSHOT</version>
+                <version>1.0.0.0</version>
             </dependency>
         </dependencies>
 
