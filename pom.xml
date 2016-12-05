@@ -6,12 +6,12 @@
     <parent>
         <groupId>de.acosix.alfresco.maven</groupId>
         <artifactId>de.acosix.alfresco.maven.module.parent</artifactId>
-        <version>1.0.0.0</version>
+        <version>1.0.0.1-SNAPSHOT</version>
     </parent>
 
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.parent</artifactId>
-    <version>1.0.0.0</version>
+    <version>1.0.0.1-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Alfresco Multi-Tenant Support - Parent</name>
@@ -53,7 +53,7 @@
         <moduleId>acosix-mtsupport</moduleId>
 
         <alfresco.distribution.version>5.0.d</alfresco.distribution.version>
-        
+        <acosix.utility.version>1.0.1.0-SNAPSHOT</acosix.utility.version>
         <acosix.common.repo.package>de.acosix.alfresco.utility.repo</acosix.common.repo.package>
     </properties>
     
@@ -74,20 +74,20 @@
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.common</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0</version>
+                <version>${acosix.utility.version}</version>
             </dependency>        
         
             <dependency>
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.repo</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0</version>
+                <version>${acosix.utility.version}</version>
             </dependency>
             
             <dependency>
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.repo</artifactId>
-                <version>1.0.0.0</version>
+                <version>${acosix.utility.version}</version>
                 <type>jar</type>
                 <classifier>installable</classifier>
             </dependency>
@@ -96,7 +96,7 @@
                 <groupId>de.acosix.alfresco.utility</groupId>
                 <artifactId>de.acosix.alfresco.utility.share</artifactId>
                 <type>jar</type>
-                <version>1.0.0.0</version>
+                <version>${acosix.utility.version}</version>
             </dependency>
         </dependencies>
 
