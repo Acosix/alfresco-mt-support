@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/Acosix/alfresco-mt-support.svg?branch=master)](https://travis-ci.org/Acosix/alfresco-mt-support)
+
 # About
 
 The Alfresco ECM product provides a basic multi-tenancy capability that users can utilize to logically keep different user bases and their content separate within an Alfresco installation. The support for multi-tenancy has had long standing [limitations](http://docs.alfresco.com/5.1/concepts/mt-not-implemented.html) that restrict the usefulness of the overal platform.
