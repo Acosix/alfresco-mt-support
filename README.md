@@ -41,7 +41,7 @@ This project can be build simply by executing the standard Maven build lifecycle
 For integration tests this project includes an embedded UnboundID LDAP server and H2 database. Integration tests require that the project be executed with an Arquillian test profile and container. A default profile "arquillian-tomcat-embed" has been inherited from the Acosix Maven Parent POM but is not active by default. It has to be activated for integration tests to run using the -P flag of the Maven executable:
 
 ```text
-mvn clean install -P arquillian-tomcat-embed
+mvn clean install -P run-integration-tests,arquillian-tomcat-embed
 ```
 
 ## Dependency in Alfresco SDK
