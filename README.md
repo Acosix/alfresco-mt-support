@@ -8,7 +8,7 @@ This module aims to provide - over time - alternative subsystem implementations 
 
 ## Compatbility
 
-This module is built to be compatible with Alfresco 5.0d and above. It may be used on either Community or Enterprise Edition. 
+This module is built to be compatible with Alfresco 5.0d and above. It may be used on either Community or Enterprise Edition. The Acosix [alfresco-utility](https://github.com/Acosix/alfresco-utility) module is a mandatory dependency for this module to work.
 
 ## Added Multi-Tenant Features
 
