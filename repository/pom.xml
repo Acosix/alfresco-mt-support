@@ -55,19 +55,6 @@
             <groupId>de.acosix.alfresco.utility</groupId>
             <artifactId>de.acosix.alfresco.utility.repo</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>org.jboss.arquillian.junit</groupId>
-            <artifactId>arquillian-junit-container</artifactId>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.shrinkwrap.resolver</groupId>
-            <artifactId>shrinkwrap-resolver-depchain</artifactId>
-            <scope>test</scope>
-            <type>pom</type>
-        </dependency>
     </dependencies>
 
     <build>
@@ -180,39 +167,6 @@
             <id>run-integration-tests</id>
             <build>
                 <plugins>
-                    <plugin>
-                        <groupId>org.apache.maven.plugins</groupId>
-                        <artifactId>maven-antrun-plugin</artifactId>
-                        <version>1.8</version>
-                        <executions>
-                            <execution>
-                                <id>Copy installable JAR for use in Arquillian tests</id>
-                                <phase>pre-integration-test</phase>
-                                <goals>
-                                    <goal>run</goal>
-                                </goals>
-                                <configuration>
-                                    <tasks>
-                                        <copy file="${project.build.directory}/${project.build.finalName}-installable.jar" tofile="${project.build.directory}/test-classes/installable-${project.artifactId}.jar" />
-                                    </tasks>
-                                </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.jboss.shrinkwrap.resolver</groupId>
-                        <artifactId>shrinkwrap-resolver-maven-plugin</artifactId>
-                        <version>2.2.0</version>
-                        <executions>
-                            <execution>
-                                <goals>
-                                    <goal>propagate-execution-context</goal>
-                                </goals>
-                            </execution>
-                        </executions>
-                    </plugin>
-
                     <plugin>
                         <groupId>com.btmatthews.maven.plugins</groupId>
                         <artifactId>ldap-maven-plugin</artifactId>

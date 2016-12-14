@@ -58,7 +58,7 @@ public class AuthenticationTest
         final PomEquippedResolveStage configureResolverViaPlugin = Maven.configureResolverViaPlugin();
         final File warFile = configureResolverViaPlugin.resolve("org.alfresco:alfresco:war:?").withoutTransitivity().asSingleFile();
         final File[] libraries = configureResolverViaPlugin
-                .resolve(Arrays.asList("org.alfresco:alfresco-repository:jar:h2scripts:?", "com.h2database:h2:jar:1.4.190",
+                .resolve(Arrays.asList("org.alfresco:alfresco-repository:jar:h2scripts:?", "com.h2database:h2:jar:?",
                         "de.acosix.alfresco.utility:de.acosix.alfresco.utility.common:jar:?",
                         "de.acosix.alfresco.utility:de.acosix.alfresco.utility.repo:jar:installable:?"))
                 .withoutTransitivity().asFile();
