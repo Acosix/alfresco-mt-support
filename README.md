@@ -163,7 +163,7 @@ Using Maven to build the Alfresco WAR is the **recommended** approach to install
 
 ## alfresco-mmt.jar / apply_amps
 
-The default Alfresco installer creates folders where you can place AMP files for modules which Alfresco will install when you use the apply_amps script. Place the AMPs for the *de.acosix.alfresco.utility.repo* and *de.acosix.alfresco.mtsupport.repo* modules in that directory and execute the script to install them.
+The default Alfresco installer creates folders *amps* and *amps_share* where you can place AMP files for modules which Alfresco will install when you use the apply_amps script. Place the AMPs for the *de.acosix.alfresco.utility.repo* and *de.acosix.alfresco.mtsupport.repo* modules in the *amps* directory and execute the script to install them. You must restart Alfresco for the installation to take effect.
 
 Alternatively you can use the alfresco-mmt.jar to install the modules as [described in the documentation](http://docs.alfresco.com/5.1/concepts/dev-extensions-modules-management-tool.html).
 
