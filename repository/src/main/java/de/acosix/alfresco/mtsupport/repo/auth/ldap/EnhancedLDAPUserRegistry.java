@@ -577,7 +577,7 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
         else
         {
             final MessageFormat mf = new MessageFormat(this.personDifferentialQuery, Locale.ENGLISH);
-            query = mf.format(this.timestampFormat.format(modifiedSince));
+            query = mf.format(new Object[] { this.timestampFormat.format(modifiedSince) });
         }
 
         final Supplier<InitialDirContext> contextSupplier = this.buildContextSupplier();
@@ -653,7 +653,7 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
         else
         {
             final MessageFormat mf = new MessageFormat(this.groupDifferentialQuery, Locale.ENGLISH);
-            query = mf.format(this.timestampFormat.format(modifiedSince));
+            query = mf.format(new Object[] { this.timestampFormat.format(modifiedSince) });
         }
 
         // find duplicate gid in advance
@@ -1483,6 +1483,8 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
             values.add(value);
         }
 
+        LOGGER.debug("Mapped value of {} to {}", attribute, values);
+
         return values;
     }
 
@@ -1505,6 +1507,8 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
             values.add(mappedValue);
         }
 
+        LOGGER.debug("Mapped value of {} to {}", attribute, values);
+
         return values;
     }
 
@@ -1514,6 +1518,7 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
         Object mappedValue;
         if (mapper != null)
         {
+            LOGGER.trace("Using {} to map value {} of attribute {}", mapper, value, attributeId);
             mappedValue = mapper.mapAttributeValue(attributeId, value);
         }
         else

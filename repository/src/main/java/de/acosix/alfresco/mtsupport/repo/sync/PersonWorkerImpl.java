@@ -186,7 +186,7 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 else
                 {
                     LOGGER.info(
-                            "Recreating occluded user {}' - this user was previously created through synchronization with a lower priority user registry",
+                            "Recreating occluded user {} - this user was previously created through synchronization with a lower priority user registry",
                             domainUser);
                     this.personService.deletePerson(domainUser);
 
@@ -216,6 +216,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
     {
         if (avatarValue instanceof AvatarBlobWrapper)
         {
+            LOGGER.debug("Checking for existing preference image for {}", person);
+
             final QName expectedQName = QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, "mt-ldap-synch");
             final List<ChildAssociationRef> childAssocs = this.nodeService.getChildAssocs(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
                     RegexQNamePattern.MATCH_ALL);
@@ -238,12 +240,15 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                     this.nodeService.removeAssociation(person, x.getTargetRef(), x.getTypeQName());
                 });
                 this.nodeService.createAssociation(person, childRef, ContentModel.ASSOC_AVATAR);
+
+                LOGGER.debug("Created new preference image for {}: {}", person, childRef);
             }
             else
             {
                 final ChildAssociationRef childAssociation = childAssocs.get(0);
                 final NodeRef childRef = childAssociation.getChildRef();
 
+                LOGGER.debug("Checking for differences with existing preference image of person {}", person);
                 if (this.checkForDigestDifferences((AvatarBlobWrapper) avatarValue, childRef))
                 {
                     if (!EqualsHelper.nullSafeEquals(childAssociation.getQName(), expectedQName))
@@ -255,6 +260,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                     try (OutputStream contentOutputStream = writer.getContentOutputStream())
                     {
                         contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
+
+                        LOGGER.debug("Updated preference image for {}: {}", person, childRef);
                     }
                     catch (final IOException ioex)
                     {
