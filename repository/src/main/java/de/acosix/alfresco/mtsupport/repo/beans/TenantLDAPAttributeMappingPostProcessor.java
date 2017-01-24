@@ -28,6 +28,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.beans.factory.config.RuntimeBeanNameReference;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.ManagedMap;
@@ -37,6 +38,8 @@ import org.springframework.beans.factory.support.ManagedMap;
  */
 public class TenantLDAPAttributeMappingPostProcessor implements BeanDefinitionRegistryPostProcessor, InitializingBean
 {
+
+    private static final String VALUE_NULL = "null";
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TenantLDAPAttributeMappingPostProcessor.class);
 
@@ -53,6 +56,8 @@ public class TenantLDAPAttributeMappingPostProcessor implements BeanDefinitionRe
     protected String beanName;
 
     protected String propertyName;
+
+    protected boolean beanReferences;
 
     /**
      *
@@ -129,6 +134,15 @@ public class TenantLDAPAttributeMappingPostProcessor implements BeanDefinitionRe
     public void setPropertyName(final String propertyName)
     {
         this.propertyName = propertyName;
+    }
+
+    /**
+     * @param beanReferences
+     *            the beanReferences to set
+     */
+    public void setBeanReferences(final boolean beanReferences)
+    {
+        this.beanReferences = beanReferences;
     }
 
     /**
@@ -211,13 +225,27 @@ public class TenantLDAPAttributeMappingPostProcessor implements BeanDefinitionRe
                             final String trimmedMappingValue = tenantMappingValue != null ? tenantMappingValue.trim() : null;
                             if (trimmedMappingValue != null && !trimmedMappingValue.isEmpty())
                             {
-                                if ("null".equals(trimmedMappingValue))
+                                if (this.beanReferences)
                                 {
-                                    configuredMapping.put(mappingProperty, null);
+                                    if (VALUE_NULL.equals(trimmedMappingValue))
+                                    {
+                                        configuredMapping.remove(mappingProperty);
+                                    }
+                                    else
+                                    {
+                                        configuredMapping.put(mappingProperty, new RuntimeBeanNameReference(trimmedMappingValue));
+                                    }
                                 }
                                 else
                                 {
-                                    configuredMapping.put(mappingProperty, trimmedMappingValue);
+                                    if (VALUE_NULL.equals(trimmedMappingValue))
+                                    {
+                                        configuredMapping.put(mappingProperty, null);
+                                    }
+                                    else
+                                    {
+                                        configuredMapping.put(mappingProperty, trimmedMappingValue);
+                                    }
                                 }
                             }
                         }

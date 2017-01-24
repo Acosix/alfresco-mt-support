@@ -76,6 +76,15 @@
         <property name="beanName" value="userRegistry" />
         <property name="propertyName" value="groupAttributeDefaults" />
     </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantLDAPAttributeMappingPostProcessor">
+        <property name="effectiveProperties" ref="effective-properties" />
+        <property name="enabled" value="true" />
+        <property name="enabledTenantPropertyKey" value="ldap.enabledTenants" />
+        <property name="beanName" value="userRegistry" />
+        <property name="propertyName" value="attributeValueMappers" />
+        <property name="beanReferences" value="true" />
+    </bean>
 
     <bean id="AuthenticationComponent" class="org.springframework.transaction.interceptor.TransactionProxyFactoryBean">
         <property name="proxyInterfaces" value="org.alfresco.repo.security.authentication.AuthenticationComponent" />
@@ -178,6 +187,7 @@
                 <entry key="cm:email" value="${ldap.synchronization.thisTenant.userEmailAttributeName}" />
                 <entry key="cm:organization" value="${ldap.synchronization.thisTenant.userOrganizationalIdAttributeName}" />
                 <entry key="cm:organizationId" value="${ldap.synchronization.thisTenant.userOrganizationalIdAttributeName}" />
+                <entry key="cm:avatar" value="${ldap.synchronization.thisTenant.userAvatarAttributeName}" />
                 <entry key="cm:homeFolderProvider">
                     <null />
                 </entry>
@@ -193,6 +203,14 @@
             <map>
                 <entry key="cm:authorityName" value="${ldap.synchronization.thisTenant.groupIdAttributeName}" />
                 <entry key="cm:authorityDisplayName" value="${ldap.synchronization.thisTenant.groupDisplayNameAttributeName}" />
+            </map>
+        </property>
+        <property name="attributeValueMappers">
+            <map>
+                <entry key="photo" value-ref="avatarAttributeValueMapper" />
+                <entry key="jpegPhoto" value-ref="avatarAttributeValueMapper" />
+                <entry key="thumbnailPhoto" value-ref="avatarAttributeValueMapper" />
+                <entry key="thumbnailLogo" value-ref="avatarAttributeValueMapper" />
             </map>
         </property>
         <property name="enableProgressEstimation" value="${ldap.synchronization.thisTenant.enableProgressEstimation}" />
@@ -251,6 +269,9 @@
                 <entry key="java.naming.security.credentials" value="${ldap.synchronization.thisTenant.java.naming.security.credentials:${ldap.thisTenant.java.naming.security.credentials}}" />
                 <entry key="com.sun.jndi.ldap.connect.pool" value="${ldap.synchronization.thisTenant.com.sun.jndi.ldap.connect.pool:${ldap.thisTenant.com.sun.jndi.ldap.connect.pool}}" />
                 <entry key="com.sun.jndi.ldap.connect.timeout" value="${ldap.synchronization.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout:${ldap.thisTenant.pooling.com.sun.jndi.ldap.connect.timeout}}" />
+                
+                <!-- some attributes may need to be retrieved as binary for proper handling -->
+                <entry key="java.naming.ldap.attributes.binary" value="${ldap.synchronization.thisTenant.java.naming.ldap.attributes.binary:${ldap.thisTenant.java.naming.ldap.attributes.binary}}" />
             </map>
         </property>
         <property name="poolSystemProperties">
@@ -266,4 +287,5 @@
         </property>
     </bean>
 
+    <bean id="avatarAttributeValueMapper" class="de.acosix.alfresco.mtsupport.repo.auth.ldap.AvatarAttributeValueMapper" />
 </beans>

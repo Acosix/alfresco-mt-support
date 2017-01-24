@@ -15,10 +15,16 @@
  */
 package de.acosix.alfresco.mtsupport.repo.sync;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -27,10 +33,18 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.dictionary.constraint.NameChecker;
 import org.alfresco.repo.security.sync.NodeDescription;
+import org.alfresco.service.cmr.repository.ChildAssociationRef;
+import org.alfresco.service.cmr.repository.ContentReader;
+import org.alfresco.service.cmr.repository.ContentService;
+import org.alfresco.service.cmr.repository.ContentWriter;
+import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
+import org.alfresco.service.namespace.RegexQNamePattern;
 import org.alfresco.util.EqualsHelper;
+import org.apache.commons.codec.binary.Hex;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +64,10 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
     protected UserAccountInterpreter accountInterpreter;
 
+    protected NodeService nodeService;
+
+    protected ContentService contentService;
+
     public PersonWorkerImpl(final String id, final String zoneId, final Set<String> targetZoneIds, final Collection<String> visitedIds,
             final Collection<String> allIds, final boolean allowDeletions, final UserAccountInterpreter accountInterpreter,
             final ComponentLookupCallback componentLookup)
@@ -58,6 +76,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
         this.accountInterpreter = accountInterpreter;
         this.nameChecker = componentLookup.getComponent("nameChecker", NameChecker.class);
+        this.nodeService = componentLookup.getComponent("nodeService", NodeService.class);
+        this.contentService = componentLookup.getComponent("contentService", ContentService.class);
     }
 
     /**
@@ -117,15 +137,23 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
         this.nameChecker.evaluate(domainUser);
 
+        NodeRef personRef = null;
+        Serializable avatarValue = null;
+
         final Set<String> personZones = this.authorityService.getAuthorityZones(domainUser);
         if (personZones == null)
         {
             LOGGER.debug("Creating user {}", domainUser);
-            this.personService.createPerson(personProperties, this.targetZoneIds);
+
+            avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
+            personRef = this.personService.createPerson(personProperties, this.targetZoneIds);
         }
         else if (personZones.contains(this.zoneId))
         {
             LOGGER.debug("Updating user {}", domainUser);
+
+            avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
+            personRef = this.personService.getPerson(domainUser);
             this.personService.setPersonProperties(domainUser, personProperties, false);
         }
         else
@@ -160,9 +188,16 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                             "Recreating occluded user {}' - this user was previously created through synchronization with a lower priority user registry",
                             domainUser);
                     this.personService.deletePerson(domainUser);
-                    this.personService.createPerson(personProperties, this.targetZoneIds);
+
+                    avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
+                    personRef = this.personService.createPerson(personProperties, this.targetZoneIds);
                 }
             }
+        }
+
+        if (personRef != null && avatarValue != null)
+        {
+            this.handleAvatar(personRef, avatarValue);
         }
 
         final Date lastModified = person.getLastModified();
@@ -174,5 +209,87 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
             }
             return newValue;
         });
+    }
+
+    protected void handleAvatar(final NodeRef person, final Serializable avatarValue)
+    {
+        if (avatarValue instanceof AvatarBlobWrapper)
+        {
+            final List<ChildAssociationRef> childAssocs = this.nodeService.getChildAssocs(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
+                    RegexQNamePattern.MATCH_ALL);
+            if (childAssocs.isEmpty())
+            {
+                final NodeRef childRef = this.nodeService.createNode(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
+                        ContentModel.ASSOC_PREFERENCE_IMAGE, ContentModel.TYPE_CONTENT).getChildRef();
+                final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
+                try (OutputStream contentOutputStream = writer.getContentOutputStream())
+                {
+                    contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
+                }
+                catch (final IOException ioex)
+                {
+                    LOGGER.warn("Error writing new person avatar", ioex);
+                }
+            }
+            else
+            {
+                final NodeRef childRef = childAssocs.get(0).getChildRef();
+
+                if (this.checkForDigestDifferences((AvatarBlobWrapper) avatarValue, childRef))
+                {
+                    final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
+                    try (OutputStream contentOutputStream = writer.getContentOutputStream())
+                    {
+                        contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
+                    }
+                    catch (final IOException ioex)
+                    {
+                        LOGGER.warn("Error writing new person avatar", ioex);
+                    }
+                }
+            }
+        }
+    }
+
+    protected boolean checkForDigestDifferences(final AvatarBlobWrapper avatarWrapper, final NodeRef preferenceImage)
+    {
+        String newImageDigestHexStr = null;
+        String existingImageDigestHexStr = null;
+
+        try
+        {
+            final MessageDigest newImageMD = MessageDigest.getInstance("MD5");
+            newImageMD.update(avatarWrapper.getData());
+            final byte[] newImageDigest = newImageMD.digest();
+            final char[] newImageDigestHex = Hex.encodeHex(newImageDigest, false);
+            newImageDigestHexStr = new String(newImageDigestHex);
+
+            final MessageDigest existingImageMD = MessageDigest.getInstance("MD5");
+            final ContentReader existingImageReader = this.contentService.getReader(preferenceImage, ContentModel.PROP_CONTENT);
+            try (InputStream contentInputStream = existingImageReader.getContentInputStream())
+            {
+                final byte[] buffer = new byte[1024 * 512];
+                int bytesRead = -1;
+                while ((bytesRead = contentInputStream.read(buffer)) != -1)
+                {
+                    existingImageMD.update(buffer, 0, bytesRead);
+                }
+
+                final byte[] existimageDigest = existingImageMD.digest();
+                final char[] existingImageDigestHex = Hex.encodeHex(existimageDigest, false);
+                existingImageDigestHexStr = new String(existingImageDigestHex);
+            }
+            catch (final IOException ioex)
+            {
+                LOGGER.warn("Error creating digest from existing person avatar", ioex);
+            }
+        }
+        catch (final NoSuchAlgorithmException dex)
+        {
+            LOGGER.warn("Error creating digest for new/existing person avatar", dex);
+        }
+
+        final boolean difference = !EqualsHelper.nullSafeEquals(newImageDigestHexStr, existingImageDigestHexStr, true);
+        return difference;
     }
 }

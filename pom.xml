@@ -76,7 +76,7 @@
                 <artifactId>de.acosix.alfresco.utility.common</artifactId>
                 <type>jar</type>
                 <version>${acosix.utility.version}</version>
-            </dependency>        
+            </dependency>
         
             <dependency>
                 <groupId>de.acosix.alfresco.utility</groupId>

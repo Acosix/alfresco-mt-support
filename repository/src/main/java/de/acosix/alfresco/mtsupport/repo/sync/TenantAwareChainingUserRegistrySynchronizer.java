@@ -72,6 +72,8 @@ import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
 import org.alfresco.repo.transaction.AlfrescoTransactionSupport.TxnReadState;
 import org.alfresco.repo.transaction.RetryingTransactionHelper.RetryingTransactionCallback;
 import org.alfresco.service.cmr.attributes.AttributeService;
+import org.alfresco.service.cmr.repository.ContentService;
+import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PersonService;
@@ -192,6 +194,10 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
     protected AuthorityService authorityService;
 
+    protected NodeService nodeService;
+
+    protected ContentService contentService;
+
     protected PersonService personService;
 
     protected AttributeService attributeService;
@@ -244,6 +250,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         PropertyCheck.mandatory(this, "applicationContextManager", this.applicationContextManager);
         PropertyCheck.mandatory(this, "userRegistrySourceBeanName", this.userRegistrySourceBeanName);
         PropertyCheck.mandatory(this, "authorityService", this.authorityService);
+        PropertyCheck.mandatory(this, "nodeService", this.nodeService);
+        PropertyCheck.mandatory(this, "contentService", this.contentService);
         PropertyCheck.mandatory(this, "personService", this.personService);
         PropertyCheck.mandatory(this, "attributeService", this.attributeService);
         PropertyCheck.mandatory(this, "transactionService", this.transactionService);
@@ -315,6 +323,24 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     public void setAuthorityService(final AuthorityService authorityService)
     {
         this.authorityService = authorityService;
+    }
+
+    /**
+     * @param nodeService
+     *            the nodeService to set
+     */
+    public void setNodeService(final NodeService nodeService)
+    {
+        this.nodeService = nodeService;
+    }
+
+    /**
+     * @param contentService
+     *            the contentService to set
+     */
+    public void setContentService(final ContentService contentService)
+    {
+        this.contentService = contentService;
     }
 
     /**
@@ -1518,6 +1544,12 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                     break;
                 case "tenantService":
                     result = this.tenantService;
+                    break;
+                case "nodeService":
+                    result = this.nodeService;
+                    break;
+                case "contentService":
+                    result = this.contentService;
                     break;
                 default:
                     throw new IllegalStateException(x + " is not available");

@@ -5,4 +5,6 @@
     <import resource="../common-mt-ldap-context.xml" />
     
     <bean id="userAccountInterpreter.template" scope="prototype" class="${project.artifactId}.auth.ldap.LDAPADUserAccountInterpreter" />
+    
+    <bean id="sidAttributeValueMapper" class="de.acosix.alfresco.mtsupport.repo.auth.ldap.SidAttributeValueMapper" />
 </beans>
