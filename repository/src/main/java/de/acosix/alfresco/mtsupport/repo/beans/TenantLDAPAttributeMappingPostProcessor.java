@@ -28,7 +28,7 @@ import org.springframework.beans.PropertyValue;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
-import org.springframework.beans.factory.config.RuntimeBeanNameReference;
+import org.springframework.beans.factory.config.RuntimeBeanReference;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.beans.factory.support.ManagedMap;
@@ -233,7 +233,7 @@ public class TenantLDAPAttributeMappingPostProcessor implements BeanDefinitionRe
                                     }
                                     else
                                     {
-                                        configuredMapping.put(mappingProperty, new RuntimeBeanNameReference(trimmedMappingValue));
+                                        configuredMapping.put(mappingProperty, new RuntimeBeanReference(trimmedMappingValue));
                                     }
                                 }
                                 else
