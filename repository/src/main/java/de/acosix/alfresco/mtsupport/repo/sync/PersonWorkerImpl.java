@@ -33,6 +33,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.dictionary.constraint.NameChecker;
 import org.alfresco.repo.security.sync.NodeDescription;
+import org.alfresco.service.cmr.repository.AssociationRef;
 import org.alfresco.service.cmr.repository.ChildAssociationRef;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentService;
@@ -215,12 +216,13 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
     {
         if (avatarValue instanceof AvatarBlobWrapper)
         {
+            final QName expectedQName = QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, "mt-ldap-synch");
             final List<ChildAssociationRef> childAssocs = this.nodeService.getChildAssocs(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
                     RegexQNamePattern.MATCH_ALL);
             if (childAssocs.isEmpty())
             {
-                final NodeRef childRef = this.nodeService.createNode(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
-                        ContentModel.ASSOC_PREFERENCE_IMAGE, ContentModel.TYPE_CONTENT).getChildRef();
+                final NodeRef childRef = this.nodeService
+                        .createNode(person, ContentModel.ASSOC_PREFERENCE_IMAGE, expectedQName, ContentModel.TYPE_CONTENT).getChildRef();
                 final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
                 try (OutputStream contentOutputStream = writer.getContentOutputStream())
                 {
@@ -230,13 +232,25 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 {
                     LOGGER.warn("Error writing new person avatar", ioex);
                 }
+
+                final List<AssociationRef> existingAvatarAssocs = this.nodeService.getTargetAssocs(person, ContentModel.ASSOC_AVATAR);
+                existingAvatarAssocs.forEach((x) -> {
+                    this.nodeService.removeAssociation(person, x.getTargetRef(), x.getTypeQName());
+                });
+                this.nodeService.createAssociation(person, childRef, ContentModel.ASSOC_AVATAR);
             }
             else
             {
-                final NodeRef childRef = childAssocs.get(0).getChildRef();
+                final ChildAssociationRef childAssociation = childAssocs.get(0);
+                final NodeRef childRef = childAssociation.getChildRef();
 
                 if (this.checkForDigestDifferences((AvatarBlobWrapper) avatarValue, childRef))
                 {
+                    if (!EqualsHelper.nullSafeEquals(childAssociation.getQName(), expectedQName))
+                    {
+                        this.nodeService.moveNode(childRef, person, ContentModel.ASSOC_PREFERENCE_IMAGE, expectedQName);
+                    }
+
                     final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
                     try (OutputStream contentOutputStream = writer.getContentOutputStream())
                     {
