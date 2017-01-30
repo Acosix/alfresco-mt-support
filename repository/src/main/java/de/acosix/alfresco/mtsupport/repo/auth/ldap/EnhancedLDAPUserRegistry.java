@@ -732,7 +732,7 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
                 final Collection<String> attributeValues = this.mapAttribute(nameAttribute, String.class);
                 final String groupName = attributeValues.iterator().next();
                 LOGGER.debug("Group DN recognized: {}", groupName);
-                groupNames.add(groupName);
+                groupNames.add(AuthorityType.GROUP.getPrefixString() + groupName);
             }
         }, this.groupSearchBase, this.groupQuery, new String[] { this.groupIdAttributeName });
         return groupNames;
