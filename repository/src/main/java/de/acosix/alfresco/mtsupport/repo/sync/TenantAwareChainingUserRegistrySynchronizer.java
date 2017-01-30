@@ -991,8 +991,9 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         this.notifySyncDirectoryStart(id, reservedBatchProcessNames);
         try
         {
-            final Date groupLastModified = this.getMostRecentUpdateTime(GROUP_LAST_MODIFIED_ATTRIBUTE, id, splitTxns);
-            final Date personLastModified = this.getMostRecentUpdateTime(PERSON_LAST_MODIFIED_ATTRIBUTE, id, splitTxns);
+            final Date groupLastModified = forceUpdate ? null : this.getMostRecentUpdateTime(GROUP_LAST_MODIFIED_ATTRIBUTE, id, splitTxns);
+            final Date personLastModified = forceUpdate ? null
+                    : this.getMostRecentUpdateTime(PERSON_LAST_MODIFIED_ATTRIBUTE, id, splitTxns);
 
             if (groupLastModified != null)
             {
