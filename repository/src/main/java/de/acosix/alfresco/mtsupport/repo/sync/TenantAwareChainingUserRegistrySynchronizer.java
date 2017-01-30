@@ -1031,7 +1031,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
             final BatchProcessor<NodeDescription> userProcessor = new BatchProcessor<>(
                     SyncProcess.USER_UPDATE_AND_CREATION.getTitle(batchId), this.transactionService.getRetryingTransactionHelper(),
-                    new UserRegistryNodeCollectionWorkProvider(userRegistry.getPersons(groupLastModified)), this.workerThreads,
+                    new UserRegistryNodeCollectionWorkProvider(userRegistry.getPersons(personLastModified)), this.workerThreads,
                     USER_REGISTRY_ENTITY_BATCH_SIZE, this.applicationEventPublisher,
                     LogFactory.getLog(TenantAwareChainingUserRegistrySynchronizer.class), this.loggingInterval);
 

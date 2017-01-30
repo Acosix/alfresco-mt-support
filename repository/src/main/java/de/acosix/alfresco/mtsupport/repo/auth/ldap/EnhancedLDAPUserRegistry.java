@@ -874,26 +874,25 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
     {
         // Compile a complete array of LDAP attribute names, including operational attributes
         final Set<String> attributeSet = new TreeSet<>();
+        final Set<QName> qnames = new HashSet<>(attributeMapping.size() * 2);
+
         attributeSet.addAll(Arrays.asList(extraAttibutes));
         attributeSet.add(this.modifyTimestampAttributeName);
-        for (final String attribute : attributeMapping.values())
-        {
-            if (attribute != null)
+
+        attributeMapping.forEach((key, value) -> {
+            if (value != null)
             {
-                attributeSet.add(attribute);
+                attributeSet.add(value);
             }
-        }
-        final String[] attributeNames = new String[attributeSet.size()];
-        attributeSet.toArray(attributeNames);
 
-        // Create a set with the property names converted to QNames
-        final Set<QName> qnames = new HashSet<>(attributeMapping.size() * 2);
-        for (final String property : attributeMapping.keySet())
-        {
-            qnames.add(QName.createQName(property, this.namespaceService));
-        }
+            final QName qname = QName.resolveToQName(this.namespaceService, key);
+            qnames.add(qname);
+        });
 
-        return new Pair<>(attributeNames, qnames);
+        LOGGER.debug("Derived attribute names {} and property qnames {} from configured mappings {} and extra attributes {}", attributeSet,
+                qnames, attributeMapping, Arrays.toString(extraAttibutes));
+
+        return new Pair<>(attributeSet.toArray(new String[0]), qnames);
     }
 
     protected LdapName resolveDistinguishedNamePrefix(final String searchBase)
@@ -1011,9 +1010,10 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
         if (LOGGER.isDebugEnabled())
         {
             LOGGER.debug(
-                    "Processing query\nSearch base: {}\n\rReturn result limit: {}\n\tDereflink: {}\n\rReturn named object: {}\n\tTime limit for search: {}\n\tAttributes to return: {} items\n\tAttributes: {}",
-                    searchBase, searchControls.getCountLimit(), searchControls.getDerefLinkFlag(), searchControls.getReturningObjFlag(),
-                    searchControls.getTimeLimit(), String.valueOf(returningAttributes.length), Arrays.toString(returningAttributes));
+                    "Processing query {}\nSearch base: {}\n\rReturn result limit: {}\n\tDereflink: {}\n\rReturn named object: {}\n\tTime limit for search: {}\n\tAttributes to return: {} items\n\tAttributes: {}",
+                    query, searchBase, searchControls.getCountLimit(), searchControls.getDerefLinkFlag(),
+                    searchControls.getReturningObjFlag(), searchControls.getTimeLimit(), String.valueOf(returningAttributes.length),
+                    Arrays.toString(returningAttributes));
         }
 
         InitialDirContext ctx = null;
@@ -1132,6 +1132,8 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
 
     protected Function<InitialDirContext, NamingEnumeration<SearchResult>> buildUserSearcher(final String query)
     {
+        LOGGER.debug("Building user searcher for query {}", query);
+
         final SearchControls userSearchCtls = new SearchControls();
         userSearchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
         userSearchCtls.setReturningAttributes(this.userKeys.getFirst());
@@ -1160,16 +1162,18 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
 
     protected Function<InitialDirContext, NamingEnumeration<SearchResult>> buildGroupSearcher(final String query)
     {
-        final SearchControls userSearchCtls = new SearchControls();
-        userSearchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-        userSearchCtls.setReturningAttributes(this.groupKeys.getFirst());
+        LOGGER.debug("Building group searcher for query {}", query);
+
+        final SearchControls groupSearchCtls = new SearchControls();
+        groupSearchCtls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+        groupSearchCtls.setReturningAttributes(this.groupKeys.getFirst());
         // MNT-14001 fix, set search limit to ensure that server will not return more search results then provided by paged result control
-        userSearchCtls.setCountLimit(this.queryBatchSize > 0 ? this.queryBatchSize : 0);
+        groupSearchCtls.setCountLimit(this.queryBatchSize > 0 ? this.queryBatchSize : 0);
 
         return (ctx) -> {
             try
             {
-                final NamingEnumeration<SearchResult> results = ctx.search(this.groupSearchBase, query, userSearchCtls);
+                final NamingEnumeration<SearchResult> results = ctx.search(this.groupSearchBase, query, groupSearchCtls);
                 return results;
             }
             catch (final NamingException e)
@@ -1382,6 +1386,7 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
             try
             {
                 nodeDescription.setLastModified(this.timestampFormat.parse(modifyTimestamp.get().toString()));
+                LOGGER.debug("Setting last modified of node {} to {}", uid, nodeDescription.getLastModified());
             }
             catch (final ParseException e)
             {
@@ -1442,19 +1447,23 @@ public class EnhancedLDAPUserRegistry implements EnhancedUserRegistry, LDAPNameR
                 }
                 else if (defaultAttribute != null)
                 {
+                    LOGGER.debug("Node {} does not provide attriute {} - using default value", uid, attributeName);
                     properties.put(keyQName, defaultAttribute);
                 }
                 else
                 {
+                    LOGGER.debug("Node {} does not provide attriute {} - setting to null", uid, attributeName);
                     // Make sure that a 2nd sync, updates deleted ldap attributes (MNT-14026)
                     properties.put(keyQName, null);
                 }
             }
             else
             {
+                LOGGER.debug("No attribute name has been configured for property {}", keyQName);
                 final String defaultValue = attributeDefaults.get(key);
                 if (defaultValue != null)
                 {
+                    LOGGER.debug("Using default value for {} on node {}", keyQName, uid);
                     properties.put(keyQName, defaultValue);
                 }
             }
