@@ -159,6 +159,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
         }
         else
         {
+            personRef = this.personService.getPerson(domainUser);
+
             // Check whether the user is in any of the authentication chain zones
             final Set<String> intersection = new TreeSet<>();
             for (final String groupZone : personZones)
