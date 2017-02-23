@@ -17,15 +17,23 @@ package de.acosix.alfresco.mtsupport.repo.integration;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
 
+import org.alfresco.model.ContentModel;
+import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.tenant.TenantAdminService;
+import org.alfresco.service.cmr.repository.ChildAssociationRef;
+import org.alfresco.service.cmr.repository.ContentReader;
+import org.alfresco.service.cmr.repository.ContentService;
 import org.alfresco.service.cmr.repository.NodeRef;
+import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AuthenticationService;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
+import org.alfresco.service.namespace.RegexQNamePattern;
 import org.jboss.arquillian.container.test.api.Deployment;
 import org.jboss.arquillian.junit.Arquillian;
 import org.jboss.shrinkwrap.api.ShrinkWrap;
@@ -46,7 +54,7 @@ import org.springframework.web.context.WebApplicationContext;
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
 @RunWith(Arquillian.class)
-public class AuthenticationTest
+public class AuthenticationAndSynchronisationTests
 {
 
     @Rule
@@ -95,12 +103,29 @@ public class AuthenticationTest
     }
 
     @Test
-    public void loginExistingUserAFaustDefaultTenant()
+    public void loginExistingUserAFaustDefaultTenantAndCheckSynchedState()
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
 
         authenticationService.authenticate("afaust", "afaust".toCharArray());
+
+        final PersonService personService = context.getBean("PersonService", PersonService.class);
+        final NodeService nodeService = context.getBean("NodeService", NodeService.class);
+        final ContentService contentService = context.getBean("ContentService", ContentService.class);
+
+        // verify thumbnail has been synchronised
+        final NodeRef afaust = personService.getPerson("afaust");
+        final List<ChildAssociationRef> avatarAssocs = nodeService.getChildAssocs(afaust, ContentModel.ASSOC_PREFERENCE_IMAGE,
+                RegexQNamePattern.MATCH_ALL);
+        Assert.assertEquals("No user thumbnail has been synchronized", 1, avatarAssocs.size());
+        final NodeRef avatar = avatarAssocs.get(0).getChildRef();
+        final ContentReader reader = contentService.getReader(avatar, ContentModel.PROP_CONTENT);
+
+        Assert.assertNotNull("Avatar should have content", reader);
+        Assert.assertTrue("Avatar should exist", reader.exists());
+        Assert.assertNotEquals("Avatar should not be zero-byte", 0, reader.getSize());
+        Assert.assertEquals("Avatar mimetype should have been image/jpeg", MimetypeMap.MIMETYPE_IMAGE_JPEG, reader.getMimetype());
     }
 
     @Test

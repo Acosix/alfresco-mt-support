@@ -206,10 +206,10 @@
                                     <host>localhost</host>
                                     <port>10389</port>
                                     <sources>
-                                        <ldif>${project.basedir}/src/test/resources/defaultTenant.ldif</ldif>
-                                        <ldif>${project.basedir}/src/test/resources/tenantAlpha.ldif</ldif>
-                                        <ldif>${project.basedir}/src/test/resources/tenantBeta.ldif</ldif>
-                                        <!-- <ldif>${project.basedir}/src/test/resources/tenantGamma.ldif</ldif> -->
+                                        <ldif>${project.build.directory}/test-classes/defaultTenant.ldif</ldif>
+                                        <ldif>${project.build.directory}/test-classes/tenantAlpha.ldif</ldif>
+                                        <ldif>${project.build.directory}/test-classes/tenantBeta.ldif</ldif>
+                                        <!-- <ldif>${project.build.directory}/test-classes/tenantGamma.ldif</ldif> -->
                                     </sources>
                                 </configuration>
                             </execution>

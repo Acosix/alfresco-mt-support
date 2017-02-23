@@ -20,6 +20,7 @@ uid: afaust
 sn: Faust
 givenName: Axel
 userPassword: afaust
+jpegPhoto:< file:///${project.build.directory}/test-classes/no-user-photo-64.jpg
 objectclass: inetOrgPerson
 
 dn: cn=Max Mustermann,ou=users,ou=defaultTenant,dc=acosix,dc=de
