@@ -228,6 +228,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 final NodeRef childRef = this.nodeService
                         .createNode(person, ContentModel.ASSOC_PREFERENCE_IMAGE, expectedQName, ContentModel.TYPE_CONTENT).getChildRef();
                 final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
+                writer.guessEncoding();
+                writer.guessMimetype(null);
                 try (OutputStream contentOutputStream = writer.getContentOutputStream())
                 {
                     contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
@@ -259,6 +261,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                     }
 
                     final ContentWriter writer = this.contentService.getWriter(childRef, ContentModel.PROP_CONTENT, true);
+                    writer.guessEncoding();
+                    writer.guessMimetype(null);
                     try (OutputStream contentOutputStream = writer.getContentOutputStream())
                     {
                         contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
