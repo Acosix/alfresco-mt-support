@@ -65,14 +65,14 @@ public class GroupParentAdditionWorker extends AbstractSyncBatchWorker<String>
                     }
                     else
                     {
-                        LOGGER.debug("Cannot add {} to group", groupShortName, parent);
+                        LOGGER.info("Cannot add {} to to non-existent parent group {}", groupShortName, parent);
                     }
                 }
             }
         }
         else
         {
-            LOGGER.debug("Cannot process non-existent group {}", group);
+            LOGGER.info("Cannot process non-existent group {}", group);
         }
     }
 }

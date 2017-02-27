@@ -65,7 +65,9 @@ import org.alfresco.repo.security.sync.SynchronizeStartEvent;
 import org.alfresco.repo.security.sync.TestableChainingUserRegistrySynchronizer;
 import org.alfresco.repo.security.sync.UserRegistry;
 import org.alfresco.repo.security.sync.UserRegistrySynchronizer;
+import org.alfresco.repo.tenant.TenantAdminService;
 import org.alfresco.repo.tenant.TenantContextHolder;
+import org.alfresco.repo.tenant.TenantDeployer;
 import org.alfresco.repo.tenant.TenantService;
 import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.repo.transaction.AlfrescoTransactionSupport;
@@ -114,9 +116,12 @@ import org.springframework.extensions.surf.util.I18NUtil;
  *
  * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
  */
-public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecycleBean implements UserRegistrySynchronizer,
-        ChainingUserRegistrySynchronizerStatus, TestableChainingUserRegistrySynchronizer, InitializingBean, ApplicationEventPublisherAware
+public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecycleBean
+        implements UserRegistrySynchronizer, ChainingUserRegistrySynchronizerStatus, TestableChainingUserRegistrySynchronizer,
+        InitializingBean, ApplicationEventPublisherAware, TenantDeployer
 {
+
+    private static final String ALFRESCO_M_BEAN_SERVER = "alfrescoMBeanServer";
 
     /**
      * @author Axel Faust, <a href="http://acosix.de">Acosix GmbH</a>
@@ -208,11 +213,11 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
     protected ApplicationEventPublisher applicationEventPublisher;
 
-    protected boolean syncWhenMissingPeopleLogIn = true;
+    protected Map<String, Boolean> syncWhenMissingPeopleLogIn;
 
-    protected boolean syncOnStartup = true;
+    protected Map<String, Boolean> syncOnStartup;
 
-    protected boolean autoCreatePeopleOnLogin = true;
+    protected Map<String, Boolean> autoCreatePeopleOnLogin;
 
     protected int loggingInterval = 100;
 
@@ -220,9 +225,9 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
     protected MBeanServerConnection mbeanServer;
 
-    protected boolean syncDelete = true;
+    protected Map<String, Boolean> syncDelete;
 
-    protected boolean allowDeletions = true;
+    protected Map<String, Boolean> allowDeletions;
 
     protected NameChecker nameChecker;
 
@@ -235,9 +240,52 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
     protected TenantService tenantService;
 
+    protected TenantAdminService tenantAdminService;
+
+    @Override
     public void init()
     {
         // NO-OP - only exists for compatibility with default class
+        // also, TenantDeployer defines this and we don't want to handle initial creation of tenant
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void destroy()
+    {
+        // NO-OP
+        // also, TenantDeployer defines this and we don't want to handle initial deletion of tenant
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onEnableTenant()
+    {
+        final boolean syncOnStartup = Boolean.TRUE.equals(this.syncOnStartup.get(TenantUtil.getCurrentDomain()));
+        if (syncOnStartup)
+        {
+            try
+            {
+                this.synchronize(false, false, true);
+            }
+            catch (final RuntimeException e)
+            {
+                LOGGER.warn("Failed initial synchronize with user registries in {} tenant", TenantUtil.getCurrentDomain(), e);
+            }
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void onDisableTenant()
+    {
+        // NO-OP
     }
 
     /**
@@ -260,15 +308,24 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
         PropertyCheck.mandatory(this, "nameChecker", this.nameChecker);
         PropertyCheck.mandatory(this, "sysAdminParams", this.sysAdminParams);
         PropertyCheck.mandatory(this, "tenantService", this.tenantService);
+        PropertyCheck.mandatory(this, "tenantAdminService", this.tenantAdminService);
+
+        PropertyCheck.mandatory(this, "syncOnStartup", this.syncOnStartup);
+        PropertyCheck.mandatory(this, "syncWhenMissingPeopleLogIn", this.syncWhenMissingPeopleLogIn);
+        PropertyCheck.mandatory(this, "allowDeletions", this.allowDeletions);
+        PropertyCheck.mandatory(this, "syncDelete", this.syncDelete);
+        PropertyCheck.mandatory(this, "autoCreatePeopleOnLogin", this.autoCreatePeopleOnLogin);
 
         // likely not available in Community Edition servers
         if (this.mbeanServer == null)
         {
-            if (this.applicationContext.containsBean("alfrescoMBeanServer"))
+            if (this.applicationContext.containsBean(ALFRESCO_M_BEAN_SERVER))
             {
-                this.mbeanServer = (MBeanServerConnection) this.applicationContext.getBean("alfrescoMBeanServer");
+                this.mbeanServer = (MBeanServerConnection) this.applicationContext.getBean(ALFRESCO_M_BEAN_SERVER);
             }
         }
+
+        this.tenantAdminService.register(this);
     }
 
     /**
@@ -382,7 +439,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
      * @param syncWhenMissingPeopleLogIn
      *            the syncWhenMissingPeopleLogIn to set
      */
-    public void setSyncWhenMissingPeopleLogIn(final boolean syncWhenMissingPeopleLogIn)
+    public void setSyncWhenMissingPeopleLogIn(final Map<String, Boolean> syncWhenMissingPeopleLogIn)
     {
         this.syncWhenMissingPeopleLogIn = syncWhenMissingPeopleLogIn;
     }
@@ -391,7 +448,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
      * @param syncOnStartup
      *            the syncOnStartup to set
      */
-    public void setSyncOnStartup(final boolean syncOnStartup)
+    public void setSyncOnStartup(final Map<String, Boolean> syncOnStartup)
     {
         this.syncOnStartup = syncOnStartup;
     }
@@ -400,7 +457,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
      * @param autoCreatePeopleOnLogin
      *            the autoCreatePeopleOnLogin to set
      */
-    public void setAutoCreatePeopleOnLogin(final boolean autoCreatePeopleOnLogin)
+    public void setAutoCreatePeopleOnLogin(final Map<String, Boolean> autoCreatePeopleOnLogin)
     {
         this.autoCreatePeopleOnLogin = autoCreatePeopleOnLogin;
     }
@@ -435,7 +492,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
      * @param allowDeletions
      *            the allowDeletions to set
      */
-    public void setAllowDeletions(final boolean allowDeletions)
+    public void setAllowDeletions(final Map<String, Boolean> allowDeletions)
     {
         this.allowDeletions = allowDeletions;
     }
@@ -444,7 +501,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
      * @param syncDelete
      *            the syncDelete to set
      */
-    public void setSyncDelete(final boolean syncDelete)
+    public void setSyncDelete(final Map<String, Boolean> syncDelete)
     {
         this.syncDelete = syncDelete;
     }
@@ -492,6 +549,15 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     public void setTenantService(final TenantService tenantService)
     {
         this.tenantService = tenantService;
+    }
+
+    /**
+     * @param tenantAdminService
+     *            the tenantAdminService to set
+     */
+    public void setTenantAdminService(final TenantAdminService tenantAdminService)
+    {
+        this.tenantAdminService = tenantAdminService;
     }
 
     /**
@@ -611,11 +677,17 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     {
         ParameterCheck.mandatoryString("userName", userName);
 
+        final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean syncWhenMissingPeopleLogIn = Boolean.TRUE.equals(this.syncWhenMissingPeopleLogIn
+                .get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+        final boolean autoCreatePeopleOnLogin = Boolean.TRUE.equals(this.autoCreatePeopleOnLogin
+                .get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+
         boolean personCreated = false;
         final String baseNameUser = this.tenantService.getBaseNameUser(userName);
         if (!baseNameUser.equals(AuthenticationUtil.getSystemUserName()))
         {
-            if (this.syncWhenMissingPeopleLogIn)
+            if (syncWhenMissingPeopleLogIn)
             {
                 try
                 {
@@ -633,7 +705,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                 }
             }
 
-            if (!personCreated && this.autoCreatePeopleOnLogin && this.personService.createMissingPeople())
+            if (!personCreated && autoCreatePeopleOnLogin && this.personService.createMissingPeople())
             {
                 final AuthorityType authorityType = AuthorityType.getAuthorityType(userName);
                 if (authorityType == AuthorityType.USER)
@@ -755,7 +827,8 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     @Override
     protected void onBootstrap(final ApplicationEvent event)
     {
-        if (this.syncOnStartup)
+        final boolean syncOnStartup = Boolean.TRUE.equals(this.syncOnStartup.get(TenantUtil.DEFAULT_TENANT));
+        if (syncOnStartup)
         {
             // we only trigger the same sync for default tenant as default Alfresco does
             AuthenticationUtil.runAsSystem(() -> {
@@ -873,8 +946,11 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     protected void synchronize(final boolean forceUpdate, final boolean isFullSync, final boolean splitTxns)
     {
         final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean allowDeletions = Boolean.TRUE.equals(
+                this.allowDeletions.get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
         LOGGER.debug("Running {} sync with deletions {}allowed in tenant {}", forceUpdate ? "full" : "differential",
-                this.allowDeletions ? "" : "not ", TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? "-default-" : currentDomain);
+                allowDeletions ? "" : "not ",
+                TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain);
 
         final QName lockQName = this.getLockQNameForCurrentTenant();
         String lockToken;
@@ -1164,6 +1240,12 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     protected Pair<Integer, Integer> processAuthorityDeletions(final String id, final String batchId, final UserRegistry userRegistry,
             final boolean isFullSync, final boolean splitTxns)
     {
+        final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean allowDeletions = Boolean.TRUE.equals(
+                this.allowDeletions.get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+        final boolean syncDelete = Boolean.TRUE.equals(
+                this.syncDelete.get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+
         final String zoneId = asZoneId(id);
         final Set<String> groupsToDelete = new HashSet<>();
         final Set<String> usersToDelete = new HashSet<>();
@@ -1185,7 +1267,6 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             groupsToDelete.removeAll(userRegistry.getGroupNames());
 
             usersToDelete.addAll(allZoneUsers);
-            final String currentDomain = TenantUtil.getCurrentDomain();
             for (final String userName : userRegistry.getPersonNames())
             {
                 final String domainUser;
@@ -1205,7 +1286,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             authoritiesToDelete.addAll(groupsToDelete);
             authoritiesToDelete.addAll(usersToDelete);
 
-            if (!authoritiesToDelete.isEmpty() && (this.allowDeletions || this.syncDelete))
+            if (!authoritiesToDelete.isEmpty() && (allowDeletions || syncDelete))
             {
                 @SuppressWarnings("deprecation")
                 final BatchProcessor<String> deletionProcessor = new BatchProcessor<>(SyncProcess.AUTHORITY_DELETION.getTitle(batchId),
@@ -1213,7 +1294,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                         USER_REGISTRY_ENTITY_BATCH_SIZE, this.applicationEventPublisher,
                         LogFactory.getLog(TenantAwareChainingUserRegistrySynchronizer.class), this.loggingInterval);
 
-                final AuthorityDeleter deleter = new AuthorityDeleter(zoneId, groupsToDelete, usersToDelete, this.allowDeletions,
+                final AuthorityDeleter deleter = new AuthorityDeleter(zoneId, groupsToDelete, usersToDelete, allowDeletions,
                         this.createComponentLookupCallback());
                 deletionProcessor.process(deleter, splitTxns);
 
@@ -1505,12 +1586,16 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
 
     protected Analyzer createAnalyzer(final String id, final Collection<String> visitedIds, final Collection<String> allIds)
     {
+        final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean allowDeletions = Boolean.TRUE.equals(
+                this.allowDeletions.get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+
         final String zoneId = asZoneId(id);
         final Set<String> zones = new HashSet<>();
         zones.add(AuthorityService.ZONE_APP_DEFAULT);
         zones.add(zoneId);
 
-        final Analyzer groupAnalyzer = new AnalyzerImpl(id, zoneId, zones, visitedIds, allIds, this.allowDeletions,
+        final Analyzer groupAnalyzer = new AnalyzerImpl(id, zoneId, zones, visitedIds, allIds, allowDeletions,
                 this.createComponentLookupCallback());
         return groupAnalyzer;
     }
@@ -1518,13 +1603,17 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     protected PersonWorker createPersonWorker(final String id, final Collection<String> visitedIds, final Collection<String> allIds,
             final UserAccountInterpreter accountInterpreter)
     {
+        final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean allowDeletions = Boolean.TRUE.equals(
+                this.allowDeletions.get(TenantService.DEFAULT_DOMAIN.equals(currentDomain) ? TenantUtil.DEFAULT_TENANT : currentDomain));
+
         final String zoneId = asZoneId(id);
         final Set<String> zones = new HashSet<>();
         zones.add(AuthorityService.ZONE_APP_DEFAULT);
         zones.add(zoneId);
 
-        final PersonWorker personWorker = new PersonWorkerImpl(id, zoneId, zones, visitedIds, allIds, this.allowDeletions,
-                accountInterpreter, this.createComponentLookupCallback());
+        final PersonWorker personWorker = new PersonWorkerImpl(id, zoneId, zones, visitedIds, allIds, allowDeletions, accountInterpreter,
+                this.createComponentLookupCallback());
         return personWorker;
     }
 

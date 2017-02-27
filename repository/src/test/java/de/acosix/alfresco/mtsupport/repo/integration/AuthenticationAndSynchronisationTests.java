@@ -92,7 +92,7 @@ public class AuthenticationAndSynchronisationTests
     }
 
     @Test
-    public void loginNonExistingUserPMaierDefaultTenant()
+    public void loginNonExistingUserDefaultTenant()
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
@@ -103,53 +103,56 @@ public class AuthenticationAndSynchronisationTests
     }
 
     @Test
-    public void loginExistingUserAFaustDefaultTenantAndCheckSynchedState()
+    public void loginExistingUsersDefaultTenant()
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
 
         authenticationService.authenticate("afaust", "afaust".toCharArray());
-
-        final PersonService personService = context.getBean("PersonService", PersonService.class);
-        final NodeService nodeService = context.getBean("NodeService", NodeService.class);
-        final ContentService contentService = context.getBean("ContentService", ContentService.class);
-
-        // verify thumbnail has been synchronised
-        final NodeRef afaust = personService.getPerson("afaust");
-        final List<ChildAssociationRef> avatarAssocs = nodeService.getChildAssocs(afaust, ContentModel.ASSOC_PREFERENCE_IMAGE,
-                RegexQNamePattern.MATCH_ALL);
-        Assert.assertEquals("No user thumbnail has been synchronized", 1, avatarAssocs.size());
-        final NodeRef avatar = avatarAssocs.get(0).getChildRef();
-        final ContentReader reader = contentService.getReader(avatar, ContentModel.PROP_CONTENT);
-
-        Assert.assertNotNull("Avatar should have content", reader);
-        Assert.assertTrue("Avatar should exist", reader.exists());
-        Assert.assertNotEquals("Avatar should not be zero-byte", 0, reader.getSize());
-        Assert.assertEquals("Avatar mimetype should have been image/jpeg", MimetypeMap.MIMETYPE_IMAGE_JPEG, reader.getMimetype());
-    }
-
-    @Test
-    public void checkUserEagerSynchAndLoginMMustermannDefaultTenant()
-    {
-        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
-        final PersonService personService = context.getBean("PersonService", PersonService.class);
-
-        AuthenticationUtil.setFullyAuthenticatedUser("admin");
-        Assert.assertTrue("User mmustermann should have been eagerly synchronized", personService.personExists("mmustermann"));
-
-        final NodeRef personNodeRef = personService.getPerson("mmustermann");
-        final PersonInfo personInfo = personService.getPerson(personNodeRef);
-
-        Assert.assertEquals("First name of mustermann should have been synchronized", "Max", personInfo.getFirstName());
-        Assert.assertEquals("Last name of mmustermann should have been synchronized", "Mustermann", personInfo.getLastName());
-
-        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
-
         authenticationService.authenticate("mmustermann", "mmustermann".toCharArray());
     }
 
     @Test
-    public void loginExistingUserAFaustTenantAlphaAndEagerSynch()
+    public void checkUserEagerSynchDefaultTenant()
+    {
+        AuthenticationUtil.setFullyAuthenticatedUser("admin");
+        this.checkUserExistsAndState("afaust", "Axel", "Faust", true);
+        this.checkUserExistsAndState("mmustermann", "Max", "Mustermann", false);
+    }
+
+    protected void checkUserExistsAndState(final String userName, final String firstName, final String lastName,
+            final boolean avatarMustExist)
+    {
+        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
+        final PersonService personService = context.getBean("PersonService", PersonService.class);
+
+        Assert.assertTrue("User mmustermann should have been eagerly synchronized", personService.personExists(userName));
+        final NodeRef personNodeRef = personService.getPerson(userName, false);
+        final PersonInfo personInfo = personService.getPerson(personNodeRef);
+
+        Assert.assertEquals("First name of user should have been synchronized", firstName, personInfo.getFirstName());
+        Assert.assertEquals("Last name of user should have been synchronized", lastName, personInfo.getLastName());
+
+        final NodeService nodeService = context.getBean("NodeService", NodeService.class);
+        final ContentService contentService = context.getBean("ContentService", ContentService.class);
+
+        final List<ChildAssociationRef> avatarAssocs = nodeService.getChildAssocs(personNodeRef, ContentModel.ASSOC_PREFERENCE_IMAGE,
+                RegexQNamePattern.MATCH_ALL);
+        Assert.assertEquals("No user thumbnail has been synchronized", avatarMustExist ? 1 : 0, avatarAssocs.size());
+        if (avatarMustExist)
+        {
+            final NodeRef avatar = avatarAssocs.get(0).getChildRef();
+            final ContentReader reader = contentService.getReader(avatar, ContentModel.PROP_CONTENT);
+
+            Assert.assertNotNull("Avatar should have content", reader);
+            Assert.assertTrue("Avatar should exist", reader.exists());
+            Assert.assertNotEquals("Avatar should not be zero-byte", 0, reader.getSize());
+            Assert.assertEquals("Avatar mimetype should have been image/jpeg", MimetypeMap.MIMETYPE_IMAGE_JPEG, reader.getMimetype());
+        }
+    }
+
+    @Test
+    public void loginOnDemandSynchTenantAlpha()
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final TenantAdminService tenantAdminService = context.getBean("TenantAdminService", TenantAdminService.class);
@@ -159,33 +162,18 @@ public class AuthenticationAndSynchronisationTests
         {
             tenantAdminService.createTenant("tenantalpha", "admin".toCharArray());
         }
+        final PersonService personService = context.getBean("PersonService", PersonService.class);
+        Assert.assertFalse("User afaust@tenantalpha should not have been synchronized yet",
+                personService.personExists("afaust@tenantalpha"));
         AuthenticationUtil.clearCurrentSecurityContext();
 
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
-
         authenticationService.authenticate("afaust@tenantalpha", "afaust".toCharArray());
-
-        final PersonService personService = context.getBean("PersonService", PersonService.class);
-        Assert.assertTrue("User afaust@tenantalpha should have been lazily created", personService.personExists("afaust@tenantalpha"));
-
-        NodeRef personNodeRef = personService.getPerson("afaust@tenantalpha");
-        PersonInfo personInfo = personService.getPerson(personNodeRef);
-
-        Assert.assertEquals("First name of afaust@tenantalpha should have been synchronized", "Axel", personInfo.getFirstName());
-        Assert.assertEquals("Last name of afaust@tenantalpha should have been synchronized", "Faust", personInfo.getLastName());
-
-        Assert.assertTrue("User mmustermann@tenantalpha should not have been eagerly synchronized",
-                personService.personExists("mmustermann@tenantalpha"));
-
-        personNodeRef = personService.getPerson("mmustermann@tenantalpha");
-        personInfo = personService.getPerson(personNodeRef);
-
-        Assert.assertEquals("First name of mustermann should have been synchronized", "Max", personInfo.getFirstName());
-        Assert.assertEquals("Last name of mmustermann should have been synchronized", "Mustermann", personInfo.getLastName());
+        this.checkUserExistsAndState("afaust@tenantalpha", "Axel", "Faust", false);
     }
 
     @Test
-    public void loginExistingUserAFaustTenantBetaAndNoSynch()
+    public void loginNoSyncTenantBeta()
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final TenantAdminService tenantAdminService = context.getBean("TenantAdminService", TenantAdminService.class);
@@ -200,16 +188,9 @@ public class AuthenticationAndSynchronisationTests
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
 
         authenticationService.authenticate("afaust@tenantbeta", "afaust".toCharArray());
+        this.checkUserExistsAndState("afaust@tenantbeta", "afaust", "", false);
 
         final PersonService personService = context.getBean("PersonService", PersonService.class);
-        Assert.assertTrue("User afaust should have been lazily created", personService.personExists("afaust@tenantbeta"));
-
-        final NodeRef personNodeRef = personService.getPerson("afaust@tenantbeta");
-        final PersonInfo personInfo = personService.getPerson(personNodeRef);
-
-        Assert.assertEquals("First name of afaust@tenantbeta should not have been synchronized", "afaust", personInfo.getFirstName());
-        Assert.assertEquals("Last name of afaust@tenantbeta should not have been synchronized", "", personInfo.getLastName());
-
         Assert.assertFalse("User mmustermann@tenantbeta should not have been eagerly synchronized",
                 personService.personExists("mmustermann@tenantbeta"));
     }

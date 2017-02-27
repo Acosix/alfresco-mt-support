@@ -81,7 +81,7 @@ public class UserParentWorker extends AbstractSyncBatchWorker<String>
                     }
                     else
                     {
-                        LOGGER.debug("Cannot add {} to group", domainUser, parent);
+                        LOGGER.info("Cannot add {} to non-existent group {}", domainUser, parent);
                     }
                 }
             }
@@ -102,7 +102,7 @@ public class UserParentWorker extends AbstractSyncBatchWorker<String>
         }
         else
         {
-            LOGGER.debug("Cannot process non-existent user {}", domainUser);
+            LOGGER.info("Cannot process non-existent user {}", domainUser);
         }
     }
 }

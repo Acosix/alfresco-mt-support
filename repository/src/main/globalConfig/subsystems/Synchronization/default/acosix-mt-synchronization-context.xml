@@ -62,6 +62,51 @@
         <property name="propertyName" value="externalUserControlSubsystemName" />
         <property name="propertyPattern" value="synchronization.thisTenant.externalUserControlSubsystemName" />
     </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="syncOnStartup" />
+        <property name="propertyPattern" value="synchronization.thisTenant.syncOnStartup" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="syncWhenMissingPeopleLogIn" />
+        <property name="propertyPattern" value="synchronization.thisTenant.syncWhenMissingPeopleLogIn" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="allowDeletions" />
+        <property name="propertyPattern" value="synchronization.thisTenant.allowDeletions" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="syncDelete" />
+        <property name="propertyPattern" value="synchronization.thisTenant.syncDelete" />
+    </bean>
+    
+    <bean class="${project.artifactId}.beans.TenantPropertyMapEmitter">
+        <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
+        <property name="enabledPropertyKey" value="${moduleId}.synchronization.enableMultiTenantUserRegistrySynchronization" />
+        <property name="enabledTenantPropertyKey" value="synchronization.enabledTenants" />
+        <property name="beanName" value="userRegistrySynchronizer" />
+        <property name="propertyName" value="autoCreatePeopleOnLogin" />
+        <property name="propertyPattern" value="synchronization.thisTenant.autoCreatePeopleOnLogin" />
+    </bean>
 
     <bean class="${project.artifactId}.beans.TemplatedTenantBeanEmitter">
         <property name="effectiveProperties" ref="${moduleId}-effective-properties" />
@@ -79,12 +124,8 @@
         <property name="jobClass" value="${project.artifactId}.sync.TenantAwareUserRegistrySynchronizerJob" />
         <property name="jobDataAsMap">
             <map>
-                <entry key="userRegistrySynchronizer">
-                    <ref bean="userRegistrySynchronizer" />
-                </entry>
-                <entry key="tenantAdminService">
-                    <ref bean="tenantAdminService" />
-                </entry>
+                <entry key="userRegistrySynchronizer" value-ref="userRegistrySynchronizer" />
+                <entry key="tenantAdminService" value-ref="tenantAdminService" />
                 <entry key="tenantDomain" value="${tenant}" />
                 <entry key="synchronizeChangesOnly" value="${synchronization.thisTenant.synchronizeChangesOnly}" />
             </map>
