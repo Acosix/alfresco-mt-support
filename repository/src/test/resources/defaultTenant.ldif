@@ -31,3 +31,28 @@ sn: Mustermann
 givenName: Max
 userPassword: mmustermann
 objectclass: inetOrgPerson
+
+dn: cn=Management,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: Management
+objectClass: groupOfNames
+member: cn=Axel Faust,ou=users,ou=defaultTenant,dc=acosix,dc=de
+
+dn: cn=Client Development,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: Client Development
+objectClass: groupOfNames
+member: cn=Max Mustermann,ou=users,ou=defaultTenant,dc=acosix,dc=de
+
+dn: cn=Development,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: Development
+objectClass: groupOfNames
+member: cn=Client Development,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+
+dn: cn=All Users,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+changetype: add
+cn: All Users
+objectClass: groupOfNames
+member: cn=Management,ou=groups,ou=defaultTenant,dc=acosix,dc=de
+member: cn=Development,ou=groups,ou=defaultTenant,dc=acosix,dc=de

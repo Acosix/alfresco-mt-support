@@ -176,7 +176,7 @@
                         <artifactId>ldap-maven-plugin</artifactId>
                         <version>1.3.2</version>
                         <configuration>
-                            <!-- <serverType>apacheds</serverType> -->
+                            <serverType>apacheds</serverType>
                             <monitorPort>11389</monitorPort>
                             <monitorKey>ldap</monitorKey>
                             <daemon>true</daemon>
@@ -209,7 +209,7 @@
                                         <ldif>${project.build.directory}/test-classes/defaultTenant.ldif</ldif>
                                         <ldif>${project.build.directory}/test-classes/tenantAlpha.ldif</ldif>
                                         <ldif>${project.build.directory}/test-classes/tenantBeta.ldif</ldif>
-                                        <!-- <ldif>${project.build.directory}/test-classes/tenantGamma.ldif</ldif> -->
+                                        <ldif>${project.build.directory}/test-classes/tenantGamma.ldif</ldif>
                                     </sources>
                                 </configuration>
                             </execution>

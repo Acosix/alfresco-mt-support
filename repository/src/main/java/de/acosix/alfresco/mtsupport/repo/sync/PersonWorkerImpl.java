@@ -200,25 +200,28 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
         if (personRef != null && avatarValue != null)
         {
-            this.handleAvatar(personRef, avatarValue);
+            this.handleAvatar(domainUser, personRef, avatarValue);
         }
 
         final Date lastModified = person.getLastModified();
-        this.latestModified.updateAndGet(oldLastModified -> {
-            long newValue = lastModified.getTime();
-            if (oldLastModified > newValue)
-            {
-                newValue = oldLastModified;
-            }
-            return newValue;
-        });
+        if (lastModified != null)
+        {
+            this.latestModified.updateAndGet(oldLastModified -> {
+                long newValue = lastModified.getTime();
+                if (oldLastModified > newValue)
+                {
+                    newValue = oldLastModified;
+                }
+                return newValue;
+            });
+        }
     }
 
-    protected void handleAvatar(final NodeRef person, final Serializable avatarValue)
+    protected void handleAvatar(final String userName, final NodeRef person, final Serializable avatarValue)
     {
         if (avatarValue instanceof AvatarBlobWrapper)
         {
-            LOGGER.debug("Checking for existing preference image for {}", person);
+            LOGGER.debug("Checking for existing preference image for {}", userName);
 
             final QName expectedQName = QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI, "mt-ldap-synch");
             final List<ChildAssociationRef> childAssocs = this.nodeService.getChildAssocs(person, ContentModel.ASSOC_PREFERENCE_IMAGE,
@@ -245,7 +248,7 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 });
                 this.nodeService.createAssociation(person, childRef, ContentModel.ASSOC_AVATAR);
 
-                LOGGER.debug("Created new preference image for {}: {}", person, childRef);
+                LOGGER.debug("Created new preference image for {}: {}", userName, childRef);
             }
             else
             {
@@ -267,7 +270,7 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                     {
                         contentOutputStream.write(((AvatarBlobWrapper) avatarValue).getData());
 
-                        LOGGER.debug("Updated preference image for {}: {}", person, childRef);
+                        LOGGER.debug("Updated preference image for {}: {}", userName, childRef);
                     }
                     catch (final IOException ioex)
                     {

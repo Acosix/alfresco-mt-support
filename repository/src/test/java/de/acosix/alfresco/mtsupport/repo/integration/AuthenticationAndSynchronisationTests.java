@@ -17,20 +17,27 @@ package de.acosix.alfresco.mtsupport.repo.integration;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 
 import org.alfresco.model.ContentModel;
 import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.security.authentication.AuthenticationException;
 import org.alfresco.repo.security.authentication.AuthenticationUtil;
 import org.alfresco.repo.tenant.TenantAdminService;
+import org.alfresco.repo.tenant.TenantUtil;
 import org.alfresco.service.cmr.repository.ChildAssociationRef;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentService;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
 import org.alfresco.service.cmr.security.AuthenticationService;
+import org.alfresco.service.cmr.security.AuthorityService;
+import org.alfresco.service.cmr.security.AuthorityType;
 import org.alfresco.service.cmr.security.PersonService;
 import org.alfresco.service.cmr.security.PersonService.PersonInfo;
 import org.alfresco.service.namespace.RegexQNamePattern;
@@ -80,6 +87,8 @@ public class AuthenticationAndSynchronisationTests
         archive.addAsResource("configRoot/alfresco/extension/dev-log4j.properties", "alfresco/extension/dev-log4j.properties");
         archive.addAsResource("configRoot/alfresco/extension/subsystems/Authentication/mt-ldap/test/custom.properties",
                 "alfresco/extension/subsystems/Authentication/mt-ldap/test/custom.properties");
+        archive.addAsResource("configRoot/alfresco/extension/subsystems/Synchronization/default/default/custom.properties",
+                "alfresco/extension/subsystems/Synchronization/default/default/custom.properties");
         return archive;
     }
 
@@ -92,10 +101,29 @@ public class AuthenticationAndSynchronisationTests
     }
 
     @Test
-    public void loginNonExistingUserDefaultTenant()
+    public void loginStartupSynchDefaultTenant()
     {
+        // verifies users are eagerly synchronised on startup
+        // synchronisation for missing people and and auto-creation of people is off for default tenant
+        AuthenticationUtil.setFullyAuthenticatedUser("admin");
+        this.checkUserExistsAndState("afaust", "Axel", "Faust", true);
+        this.checkUserExistsAndState("mmustermann", "Max", "Mustermann", false);
+
+        this.checkGroupsExistsAndMembers("Management", "Management", Arrays.asList("afaust"), Collections.emptyList(),
+                Arrays.asList("afaust"), Collections.emptyList());
+        this.checkGroupsExistsAndMembers("Client Development", "Client Development", Arrays.asList("mmustermann"), Collections.emptyList(),
+                Arrays.asList("mmustermann"), Collections.emptyList());
+        this.checkGroupsExistsAndMembers("Development", "Development", Collections.emptyList(), Arrays.asList("Client Development"),
+                Arrays.asList("mmustermann"), Arrays.asList("Client Development"));
+        this.checkGroupsExistsAndMembers("All Users", "All Users", Collections.emptyList(), Arrays.asList("Management", "Development"),
+                Arrays.asList("afaust", "mmustermann"), Arrays.asList("Management", "Development", "Client Development"));
+        AuthenticationUtil.clearCurrentSecurityContext();
+
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
+
+        authenticationService.authenticate("afaust", "afaust".toCharArray());
+        authenticationService.authenticate("mmustermann", "mmustermann".toCharArray());
 
         this.thrown.expect(AuthenticationException.class);
         this.thrown.expectMessage("Failed to authenticate");
@@ -103,21 +131,76 @@ public class AuthenticationAndSynchronisationTests
     }
 
     @Test
-    public void loginExistingUsersDefaultTenant()
+    public void loginOnDemandSynchTenantAlpha()
     {
-        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
-        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
+        AuthenticationUtil.setFullyAuthenticatedUser("admin");
+        this.createAndEnableTenant("tenantalpha");
 
-        authenticationService.authenticate("afaust", "afaust".toCharArray());
-        authenticationService.authenticate("mmustermann", "mmustermann".toCharArray());
+        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
+        final PersonService personService = context.getBean("PersonService", PersonService.class);
+        TenantUtil.runAsTenant(() -> {
+            Assert.assertFalse("User afaust@tenantalpha should not have been synchronized yet",
+                    personService.personExists("afaust@tenantalpha"));
+            return null;
+        }, "tenantalpha");
+        AuthenticationUtil.clearCurrentSecurityContext();
+
+        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
+        authenticationService.authenticate("afaust@tenantalpha", "afaust".toCharArray());
+        this.checkUserExistsAndState("afaust@tenantalpha", "Axel", "Faust", false);
     }
 
     @Test
-    public void checkUserEagerSynchDefaultTenant()
+    public void loginNoSyncTenantBeta()
     {
         AuthenticationUtil.setFullyAuthenticatedUser("admin");
-        this.checkUserExistsAndState("afaust", "Axel", "Faust", true);
-        this.checkUserExistsAndState("mmustermann", "Max", "Mustermann", false);
+        this.createAndEnableTenant("tenantbeta");
+
+        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
+        final PersonService personService = context.getBean("PersonService", PersonService.class);
+        TenantUtil.runAsTenant(() -> {
+            Assert.assertFalse("User afaust@tenantbeta should not have been created yet", personService.personExists("afaust@tenantbeta"));
+            return null;
+        }, "tenantbeta");
+        AuthenticationUtil.clearCurrentSecurityContext();
+
+        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
+
+        authenticationService.authenticate("afaust@tenantbeta", "afaust".toCharArray());
+        this.checkUserExistsAndState("afaust@tenantbeta", "afaust", "", false);
+
+        Assert.assertFalse("User mmustermann@tenantbeta should not have been eagerly synchronized",
+                personService.personExists("mmustermann@tenantbeta"));
+    }
+
+    @Test
+    public void checStartupSynchTenantGamma()
+    {
+        AuthenticationUtil.setFullyAuthenticatedUser("admin");
+        this.createAndEnableTenant("tenantgamma");
+
+        TenantUtil.runAsTenant(() -> {
+            this.checkUserExistsAndState("afaust@tenantgamma", "Axel", "Faust", false);
+            this.checkUserExistsAndState("mmustermann@tenantgamma", "Max", "Mustermann", false);
+            return null;
+        }, "tenantgamma");
+    }
+
+    protected void createAndEnableTenant(final String tenantName)
+    {
+        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
+        final TenantAdminService tenantAdminService = context.getBean("TenantAdminService", TenantAdminService.class);
+
+        if (!tenantAdminService.existsTenant(tenantName))
+        {
+            tenantAdminService.createTenant(tenantName, "admin".toCharArray());
+            // eager sync requires "normal" enabling - won't on creation by design
+            tenantAdminService.disableTenant(tenantName);
+        }
+        if (!tenantAdminService.isEnabledTenant(tenantName))
+        {
+            tenantAdminService.enableTenant(tenantName);
+        }
     }
 
     protected void checkUserExistsAndState(final String userName, final String firstName, final String lastName,
@@ -126,19 +209,19 @@ public class AuthenticationAndSynchronisationTests
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
         final PersonService personService = context.getBean("PersonService", PersonService.class);
 
-        Assert.assertTrue("User mmustermann should have been eagerly synchronized", personService.personExists(userName));
+        Assert.assertTrue("User should have been synchronised/created", personService.personExists(userName));
         final NodeRef personNodeRef = personService.getPerson(userName, false);
         final PersonInfo personInfo = personService.getPerson(personNodeRef);
 
-        Assert.assertEquals("First name of user should have been synchronized", firstName, personInfo.getFirstName());
-        Assert.assertEquals("Last name of user should have been synchronized", lastName, personInfo.getLastName());
+        Assert.assertEquals("First name of user does not match expectation", firstName, personInfo.getFirstName());
+        Assert.assertEquals("Last name of user does not match expectation", lastName, personInfo.getLastName());
 
         final NodeService nodeService = context.getBean("NodeService", NodeService.class);
         final ContentService contentService = context.getBean("ContentService", ContentService.class);
 
         final List<ChildAssociationRef> avatarAssocs = nodeService.getChildAssocs(personNodeRef, ContentModel.ASSOC_PREFERENCE_IMAGE,
                 RegexQNamePattern.MATCH_ALL);
-        Assert.assertEquals("No user thumbnail has been synchronized", avatarMustExist ? 1 : 0, avatarAssocs.size());
+        Assert.assertEquals("No user thumbnail has been synchronised", avatarMustExist ? 1 : 0, avatarAssocs.size());
         if (avatarMustExist)
         {
             final NodeRef avatar = avatarAssocs.get(0).getChildRef();
@@ -151,47 +234,42 @@ public class AuthenticationAndSynchronisationTests
         }
     }
 
-    @Test
-    public void loginOnDemandSynchTenantAlpha()
+    protected void checkGroupsExistsAndMembers(final String groupName, final String displayName, final Collection<String> directUserMembers,
+            final Collection<String> directGroupMembers, final Collection<String> allUserMembers, final Collection<String> allGroupMembers)
     {
         final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
-        final TenantAdminService tenantAdminService = context.getBean("TenantAdminService", TenantAdminService.class);
+        final AuthorityService authorityService = context.getBean("AuthorityService", AuthorityService.class);
 
-        AuthenticationUtil.setFullyAuthenticatedUser("admin");
-        if (!tenantAdminService.existsTenant("tenantalpha"))
-        {
-            tenantAdminService.createTenant("tenantalpha", "admin".toCharArray());
-        }
-        final PersonService personService = context.getBean("PersonService", PersonService.class);
-        Assert.assertFalse("User afaust@tenantalpha should not have been synchronized yet",
-                personService.personExists("afaust@tenantalpha"));
-        AuthenticationUtil.clearCurrentSecurityContext();
+        final String groupFullName = AuthorityType.GROUP.getPrefixString() + groupName;
+        Assert.assertTrue("Group should have been synchronised/created", authorityService.authorityExists(groupFullName));
 
-        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
-        authenticationService.authenticate("afaust@tenantalpha", "afaust".toCharArray());
-        this.checkUserExistsAndState("afaust@tenantalpha", "Axel", "Faust", false);
-    }
+        final String authorityDisplayName = authorityService.getAuthorityDisplayName(groupFullName);
+        Assert.assertEquals("Display name of group does not match expectation", displayName, authorityDisplayName);
 
-    @Test
-    public void loginNoSyncTenantBeta()
-    {
-        final WebApplicationContext context = ContextLoader.getCurrentWebApplicationContext();
-        final TenantAdminService tenantAdminService = context.getBean("TenantAdminService", TenantAdminService.class);
+        final Set<String> immediateUsers = new HashSet<>(authorityService.getContainedAuthorities(AuthorityType.USER, groupFullName, true));
+        final Set<String> immediateGroups = new HashSet<>(
+                authorityService.getContainedAuthorities(AuthorityType.GROUP, groupFullName, true));
 
-        AuthenticationUtil.setFullyAuthenticatedUser("admin");
-        if (!tenantAdminService.existsTenant("tenantbeta"))
-        {
-            tenantAdminService.createTenant("tenantbeta", "admin".toCharArray());
-        }
-        AuthenticationUtil.clearCurrentSecurityContext();
+        final Set<String> expectedImmediateGroups = new HashSet<>();
+        directGroupMembers.forEach((x) -> {
+            expectedImmediateGroups.add(AuthorityType.GROUP.getPrefixString() + x);
+        });
+        final Set<String> expectedImmediateUsers = new HashSet<>(directUserMembers);
 
-        final AuthenticationService authenticationService = context.getBean("AuthenticationService", AuthenticationService.class);
+        Assert.assertEquals("Mismatch in groups as direct members of group", expectedImmediateGroups, immediateGroups);
+        Assert.assertEquals("Mismatch in users as direct members of group", expectedImmediateUsers, immediateUsers);
 
-        authenticationService.authenticate("afaust@tenantbeta", "afaust".toCharArray());
-        this.checkUserExistsAndState("afaust@tenantbeta", "afaust", "", false);
+        final Set<String> completeUsers = new HashSet<>(authorityService.getContainedAuthorities(AuthorityType.USER, groupFullName, false));
+        final Set<String> completeGroups = new HashSet<>(
+                authorityService.getContainedAuthorities(AuthorityType.GROUP, groupFullName, false));
 
-        final PersonService personService = context.getBean("PersonService", PersonService.class);
-        Assert.assertFalse("User mmustermann@tenantbeta should not have been eagerly synchronized",
-                personService.personExists("mmustermann@tenantbeta"));
+        final Set<String> expectedCompleteGroups = new HashSet<>();
+        allGroupMembers.forEach((x) -> {
+            expectedCompleteGroups.add(AuthorityType.GROUP.getPrefixString() + x);
+        });
+        final Set<String> expectedCompleteUsers = new HashSet<>(allUserMembers);
+
+        Assert.assertEquals("Mismatch in groups as direct or transitive members of group", expectedCompleteGroups, completeGroups);
+        Assert.assertEquals("Mismatch in users as direct or transitive members of group", expectedCompleteUsers, completeUsers);
     }
 }

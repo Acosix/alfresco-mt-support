@@ -197,7 +197,9 @@ public class TenantRoutingAuthenticationComponentFacade extends AbstractAuthenti
         AuthenticationComponent relevantAuthenticationComponent;
         final String primaryDomain = this.tenantService.getPrimaryDomain(userName);
 
-        LOGGER.debug("Extracted primary domain {} from user {}", primaryDomain, userName);
+        LOGGER.debug("Extracted primary domain {} from user {}",
+                primaryDomain == null || TenantService.DEFAULT_DOMAIN.equals(primaryDomain) ? TenantUtil.DEFAULT_TENANT : primaryDomain,
+                userName);
 
         if (primaryDomain == null || TenantService.DEFAULT_DOMAIN.equals(primaryDomain))
         {

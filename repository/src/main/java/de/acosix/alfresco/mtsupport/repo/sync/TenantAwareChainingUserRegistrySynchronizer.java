@@ -265,7 +265,9 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     @Override
     public void onEnableTenant()
     {
-        final boolean syncOnStartup = Boolean.TRUE.equals(this.syncOnStartup.get(TenantUtil.getCurrentDomain()));
+        final String currentDomain = TenantUtil.getCurrentDomain();
+        final boolean syncOnStartup = Boolean.TRUE.equals(this.syncOnStartup.get(currentDomain));
+        LOGGER.debug("Tenant {} enabled - syncOnStartup is {}", currentDomain, syncOnStartup);
         if (syncOnStartup)
         {
             try
@@ -274,7 +276,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
             }
             catch (final RuntimeException e)
             {
-                LOGGER.warn("Failed initial synchronize with user registries in {} tenant", TenantUtil.getCurrentDomain(), e);
+                LOGGER.warn("Failed startup synchronisation with user registries in {} tenant", currentDomain, e);
             }
         }
     }
@@ -828,6 +830,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
     protected void onBootstrap(final ApplicationEvent event)
     {
         final boolean syncOnStartup = Boolean.TRUE.equals(this.syncOnStartup.get(TenantUtil.DEFAULT_TENANT));
+        LOGGER.debug("System started - syncOnStartup is {}", syncOnStartup);
         if (syncOnStartup)
         {
             // we only trigger the same sync for default tenant as default Alfresco does
@@ -838,14 +841,7 @@ public class TenantAwareChainingUserRegistrySynchronizer extends AbstractLifecyc
                 }
                 catch (final RuntimeException e)
                 {
-                    if (this.tenantService.isEnabled())
-                    {
-                        LOGGER.warn("Failed initial synchronize with user registries in -default- tenant", e);
-                    }
-                    else
-                    {
-                        LOGGER.warn("Failed initial synchronize with user registries", e);
-                    }
+                    LOGGER.warn("Failed startup synchronisation with user registries", e);
                 }
 
                 return null;

@@ -202,14 +202,17 @@ public class AnalyzerImpl extends AbstractZonedSyncBatchWorker<NodeDescription> 
         }
 
         final Date lastModified = group.getLastModified();
-        this.latestModified.updateAndGet(oldLastModified -> {
-            long newValue = lastModified.getTime();
-            if (oldLastModified > newValue)
-            {
-                newValue = oldLastModified;
-            }
-            return newValue;
-        });
+        if (lastModified != null)
+        {
+            this.latestModified.updateAndGet(oldLastModified -> {
+                long newValue = lastModified.getTime();
+                if (oldLastModified > newValue)
+                {
+                    newValue = oldLastModified;
+                }
+                return newValue;
+            });
+        }
     }
 
     protected void updateGroup(final NodeDescription group, final boolean existed)
