@@ -4,22 +4,17 @@
            http://www.springframework.org/schema/beans
            http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
-    <bean id="${moduleId}-default-properties" class="${acosix.common.repo.package}.subsystems.SubsystemPropertiesFactoryBean">
+    <bean id="${moduleId}-subsystem-properties" class="${acosix.common.repo.package}.subsystems.SubsystemEffectivePropertiesFactoryBean">
         <property name="subsystemChildApplicationContextFactory" ref="Synchronization" />
-        <property name="extensionProperties" value="false" />
-    </bean>
-
-    <bean id="${moduleId}-extension-properties" class="${acosix.common.repo.package}.subsystems.SubsystemPropertiesFactoryBean">
-        <property name="subsystemChildApplicationContextFactory" ref="Synchronization" />
-        <property name="extensionProperties" value="true" />
     </bean>
 
     <bean id="${moduleId}-effective-properties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
         <property name="propertiesArray">
             <list>
-                <ref bean="${moduleId}-default-properties" />
+                <!-- this is included because we want all global-properties accessible -->
+                <!-- Alfresco by default only exposes subset of global-properties in subsystems -->
                 <ref bean="global-properties" />
-                <ref bean="${moduleId}-extension-properties" />
+                <ref bean="${moduleId}-subsystem-properties" />
             </list>
         </property>
     </bean>
