@@ -54,7 +54,7 @@
         <moduleId>acosix-mtsupport</moduleId>
 
         <alfresco.distribution.version>5.0.d</alfresco.distribution.version>
-        <acosix.utility.version>1.0.1.1-SNAPSHOT</acosix.utility.version>
+        <acosix.utility.version>1.0.2.0-SNAPSHOT</acosix.utility.version>
         <acosix.common.repo.package>de.acosix.alfresco.utility.repo</acosix.common.repo.package>
     </properties>
     
