@@ -2,7 +2,7 @@
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.0.xsd http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-2.0.xsd">
 
-    <bean id="subsystem-properties" class="${acosix.common.repo.package}.subsystems.SubsystemEffectivePropertiesFactoryBean">
+    <bean id="subsystem-properties" class="${acosix.utility.repo.package}.subsystems.SubsystemEffectivePropertiesFactoryBean">
         <property name="subsystemChildApplicationContextManager" ref="Authentication" />
     </bean>
 
@@ -192,6 +192,7 @@
         <property name="personAttributeDefaults">
             <map>
                 <entry key="cm:homeFolderProvider" value="${ldap.synchronization.thisTenant.defaultHomeFolderProvider}" />
+                <entry key="cm:avatarDefaultMimetype" value="${ldap.synchronization.thisTenant.userAvatarDefaultMimetype}" />
             </map>
         </property>
         <property name="groupAttributeMapping">

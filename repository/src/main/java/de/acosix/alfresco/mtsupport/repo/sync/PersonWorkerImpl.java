@@ -31,15 +31,18 @@ import java.util.TreeSet;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.alfresco.model.ContentModel;
+import org.alfresco.repo.content.MimetypeMap;
 import org.alfresco.repo.dictionary.constraint.NameChecker;
 import org.alfresco.repo.security.sync.NodeDescription;
 import org.alfresco.service.cmr.repository.AssociationRef;
 import org.alfresco.service.cmr.repository.ChildAssociationRef;
+import org.alfresco.service.cmr.repository.ContentData;
 import org.alfresco.service.cmr.repository.ContentReader;
 import org.alfresco.service.cmr.repository.ContentService;
 import org.alfresco.service.cmr.repository.ContentWriter;
 import org.alfresco.service.cmr.repository.NodeRef;
 import org.alfresco.service.cmr.repository.NodeService;
+import org.alfresco.service.cmr.repository.datatype.DefaultTypeConverter;
 import org.alfresco.service.cmr.security.AuthorityService;
 import org.alfresco.service.namespace.NamespaceService;
 import org.alfresco.service.namespace.QName;
@@ -58,6 +61,10 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PersonWorkerImpl.class);
+
+    // non-model QName used to map a default mimetype for avatar
+    private static final QName PROP_AVATAR_DEFAULT_MIMETPYE = QName.createQName(NamespaceService.CONTENT_MODEL_1_0_URI,
+            "avatarDefaultMimetype");
 
     protected final NameChecker nameChecker;
 
@@ -139,21 +146,18 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
         this.nameChecker.evaluate(domainUser);
 
         NodeRef personRef = null;
-        Serializable avatarValue = null;
+        Serializable avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
+        Serializable avatarDefaultMimetype = personProperties.remove(PROP_AVATAR_DEFAULT_MIMETPYE);
 
         final Set<String> personZones = this.authorityService.getAuthorityZones(domainUser);
         if (personZones == null)
         {
             LOGGER.debug("Creating user {}", domainUser);
-
-            avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
             personRef = this.personService.createPerson(personProperties, this.targetZoneIds);
         }
         else if (personZones.contains(this.zoneId))
         {
             LOGGER.debug("Updating user {}", domainUser);
-
-            avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
             personRef = this.personService.getPerson(domainUser);
             this.personService.setPersonProperties(domainUser, personProperties, false);
         }
@@ -178,6 +182,9 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
             if (visited.size() == 0)
             {
+                avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
+                avatarDefaultMimetype = personProperties.remove(PROP_AVATAR_DEFAULT_MIMETPYE);
+
                 if (!this.allowDeletions || intersection.isEmpty())
                 {
                     LOGGER.info("Updating user {} - this user will in future be assumed to originate from user registry {}", domainUser,
@@ -191,8 +198,6 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                             "Recreating occluded user {} - this user was previously created through synchronization with a lower priority user registry",
                             domainUser);
                     this.personService.deletePerson(domainUser);
-
-                    avatarValue = personProperties.remove(ContentModel.ASSOC_AVATAR);
                     personRef = this.personService.createPerson(personProperties, this.targetZoneIds);
                 }
             }
@@ -200,7 +205,7 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
 
         if (personRef != null && avatarValue != null)
         {
-            this.handleAvatar(domainUser, personRef, avatarValue);
+            this.handleAvatar(domainUser, personRef, avatarValue, avatarDefaultMimetype);
         }
 
         final Date lastModified = person.getLastModified();
@@ -217,7 +222,8 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
         }
     }
 
-    protected void handleAvatar(final String userName, final NodeRef person, final Serializable avatarValue)
+    protected void handleAvatar(final String userName, final NodeRef person, final Serializable avatarValue,
+            final Serializable avatarDefaultMimetype)
     {
         if (avatarValue instanceof AvatarBlobWrapper)
         {
@@ -239,7 +245,32 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 }
                 catch (final IOException ioex)
                 {
-                    LOGGER.warn("Error writing new person avatar", ioex);
+                    LOGGER.warn("Error writing new avatar for {}", userName, ioex);
+                    return;
+                }
+
+                // TIKA often can't detect the mimetype from avatars and if name does not include file extension we end up with binary
+                // we apply any configured / mapped default mimetype to ensure avatars are usable
+                // worst case: default mimetype does not match file type and avatar cannot be used just as if it had been flagge as binary
+                if (MimetypeMap.MIMETYPE_BINARY.equals(writer.getMimetype()) && avatarDefaultMimetype != null)
+                {
+                    final String mimetype = DefaultTypeConverter.INSTANCE.convert(String.class, avatarDefaultMimetype);
+                    final Serializable contentProp = this.nodeService.getProperty(childRef, ContentModel.PROP_CONTENT);
+                    if (contentProp instanceof ContentData)
+                    {
+                        // we could have injected ContentDataDAO to update the entity but then we'd bypass service layer
+                        // accept potential duplicate alf_content_data entry and trust in core to properly clean up the unused old
+                        final ContentData oldContent = (ContentData) contentProp;
+                        final ContentData newContent = new ContentData(oldContent.getContentUrl(), mimetype, oldContent.getSize(),
+                                oldContent.getEncoding(), oldContent.getLocale());
+                        this.nodeService.setProperty(childRef, ContentModel.PROP_CONTENT, newContent);
+                    }
+                    else
+                    {
+                        LOGGER.warn(
+                                "Cannot set mimetype default {} for avatar of user {} flagged as binary - value of cm:content is not a ContentData",
+                                mimetype, userName);
+                    }
                 }
 
                 final List<AssociationRef> existingAvatarAssocs = this.nodeService.getTargetAssocs(person, ContentModel.ASSOC_AVATAR);
@@ -248,7 +279,7 @@ public class PersonWorkerImpl extends AbstractZonedSyncBatchWorker<NodeDescripti
                 });
                 this.nodeService.createAssociation(person, childRef, ContentModel.ASSOC_AVATAR);
 
-                LOGGER.debug("Created new preference image for {}: {}", userName, childRef);
+                LOGGER.debug("Created new avatar for {}: {}", userName, childRef);
             }
             else
             {

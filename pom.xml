@@ -6,7 +6,7 @@
     <parent>
         <groupId>de.acosix.alfresco.maven</groupId>
         <artifactId>de.acosix.alfresco.maven.module.parent</artifactId>
-        <version>1.0.0.1</version>
+        <version>1.0.0.2</version>
     </parent>
 
     <groupId>de.acosix.alfresco.mtsupport</groupId>
@@ -55,7 +55,7 @@
 
         <alfresco.distribution.version>5.0.d</alfresco.distribution.version>
         <acosix.utility.version>1.0.2.0-SNAPSHOT</acosix.utility.version>
-        <acosix.common.repo.package>de.acosix.alfresco.utility.repo</acosix.common.repo.package>
+        <acosix.utility.repo.package>de.acosix.alfresco.utility.repo</acosix.utility.repo.package>
     </properties>
     
     <repositories>
