@@ -28,7 +28,7 @@ Alfresco itself currently considers several features not to be supported in a mu
  - CIFS (not planned due to legacy SMB protocol support in Alfresco)
  - NTLM (not planned due to being an obsolete / insecure SSO mechanism)
  - Records Management (not planned due to extensive scope)
- - Encrypted content store (not planned - should already be supported via [simple-content-stores](https://github.com/AFaust/simple-content-stores))
+ - Encrypted content store (not planned - should already be supported via [simple-content-stores](https://github.com/Acosix/alfresco-simple-content-stores))
  
 # Maven usage
 
