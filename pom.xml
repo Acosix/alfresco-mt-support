@@ -21,12 +21,12 @@
     <parent>
         <groupId>de.acosix.alfresco.maven</groupId>
         <artifactId>de.acosix.alfresco.maven.module.parent-5.0.d</artifactId>
-        <version>1.0.0.4-SNAPSHOT</version>
+        <version>1.1.0</version>
     </parent>
 
     <groupId>de.acosix.alfresco.mtsupport</groupId>
     <artifactId>de.acosix.alfresco.mtsupport.parent</artifactId>
-    <version>1.0.0.2-SNAPSHOT</version>
+    <version>1.0.0.2</version>
     <packaging>pom</packaging>
 
     <name>Alfresco Multi-Tenant Support - Parent</name>
